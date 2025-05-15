@@ -1,14 +1,18 @@
 
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/context/AuthContext';
 
 const Index = () => {
   const navigate = useNavigate();
+  const { isAuthenticated, loading } = useAuth();
   
   useEffect(() => {
-    // Redirect to the dashboard
-    navigate('/dashboard');
-  }, [navigate]);
+    if (!loading) {
+      // Redirect based on authentication state
+      navigate(isAuthenticated ? '/dashboard' : '/signin');
+    }
+  }, [navigate, isAuthenticated, loading]);
   
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
