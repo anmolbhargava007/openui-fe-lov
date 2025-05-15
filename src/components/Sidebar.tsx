@@ -2,7 +2,6 @@
 import React, { useState } from "react";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import { WorkspaceWithDocuments } from "@/types/api";
-import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -24,7 +23,6 @@ import {
 } from "lucide-react";
 import WorkspaceDialog from "./WorkspaceDialog";
 import UploadModal from "./UploadModal";
-import logo from "./../../public/icons/logo-light.png";
 
 const Sidebar = () => {
   const { workspaces, selectedWorkspace, selectWorkspace, deleteWorkspace } = useWorkspace();
@@ -62,10 +60,6 @@ const Sidebar = () => {
 
   return (
     <div className="h-screen flex flex-col bg-gray-800 border-r border-gray-700 w-72 overflow-hidden">
-      {/* Logo */}
-      <div className="p-4 border-b border-gray-700">
-        <img src={logo} alt="logo"/>
-      </div>
 
       {/* New Workspace Button */}
       <div className="px-3 py-3">

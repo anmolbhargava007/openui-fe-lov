@@ -1,15 +1,15 @@
-
 import { useAuth } from "@/context/AuthContext";
 import { Navigate, Outlet } from "react-router-dom";
+import Header from "./Header";
 
 interface AuthLayoutProps {
   protected?: boolean;
+  withHeader?: boolean;  // new prop to control header visibility
 }
 
-export const AuthLayout = ({ protected: isProtected = false }: AuthLayoutProps) => {
+export const AuthLayout = ({ protected: isProtected = false, withHeader = false }: AuthLayoutProps) => {
   const { isAuthenticated, loading } = useAuth();
 
-  // Show loading state while checking authentication
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -18,15 +18,18 @@ export const AuthLayout = ({ protected: isProtected = false }: AuthLayoutProps) 
     );
   }
 
-  // For protected routes, redirect to signin if not authenticated
   if (isProtected && !isAuthenticated) {
     return <Navigate to="/signin" />;
   }
 
-  // For authentication routes, redirect to dashboard if already authenticated
   if (!isProtected && isAuthenticated) {
     return <Navigate to="/dashboard" />;
   }
 
-  return <Outlet />;
+  return (
+    <>
+      {isProtected && withHeader && <Header />}
+      <Outlet />
+    </>
+  );
 };

@@ -18,6 +18,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { authApi } from "@/services/authApi";
 import { useAuth } from "@/context/AuthContext";
+import logo from "./../../public/icons/logo-light.png"
 
 const signinSchema = z.object({
   user_email: z.string().email({ message: "Please enter a valid email address" }),
@@ -61,11 +62,10 @@ const SigninPage = () => {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
-          <h1 className="text-3xl font-bold">Welcome back</h1>
-          <p className="mt-2 text-gray-600">Please sign in to continue</p>
+          <img src={logo} alt="logo" />
         </div>
-        
         <div className="bg-white p-8 rounded-lg shadow-md">
+          <p className="mt-1 text-center mb-3 text-gray-600">Please Sign in to continue</p>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <FormField

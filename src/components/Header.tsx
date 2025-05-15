@@ -1,23 +1,14 @@
-
-import { Link } from "react-router-dom";
 import UserMenu from "./UserMenu";
 import { useAuth } from "@/context/AuthContext";
+import logo from "./../../public/icons/logo-light.png";
 
 const Header = () => {
   const { isAuthenticated } = useAuth();
 
   return (
-    <header className="border-b bg-background">
-      <div className="container flex h-16 items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Link to="/" className="text-xl font-bold">
-            DataGPT
-          </Link>
-        </div>
-        <div className="flex items-center gap-4">
-          {isAuthenticated && <UserMenu />}
-        </div>
-      </div>
+    <header className="w-full p-2 flex justify-between items-center border-b bg-[#D3D3D3] text-white">
+      <img src={logo} alt="Logo" className="h-20 w-auto" />
+      {isAuthenticated && <UserMenu />}
     </header>
   );
 };

@@ -1,5 +1,4 @@
-
-import { LogOut, Settings, User } from "lucide-react";
+import { LogOut, Settings } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import {
   DropdownMenu,
@@ -14,9 +13,12 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 const UserMenu = () => {
   const { user, logout } = useAuth();
 
+  // Don’t render if user is not logged in
   if (!user) return null;
 
-  const getInitials = (name: string) => {
+  // Safely get initials from name
+  const getInitials = (name?: string) => {
+    if (!name || typeof name !== "string") return "??";
     return name
       .split(" ")
       .map((part) => part[0])
@@ -30,16 +32,18 @@ const UserMenu = () => {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-10 w-10 rounded-full">
           <Avatar>
-            <AvatarFallback>{getInitials(user.user_name)}</AvatarFallback>
+            <AvatarFallback className="bg-gray-600 text-white">
+              {getInitials(user.user_name)}
+            </AvatarFallback>
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="end">
         <div className="flex items-center justify-start gap-2 p-2">
           <div className="flex flex-col space-y-1 leading-none">
-            <p className="font-medium">{user.user_name}</p>
+            <p className="font-medium">{user?.user_name || "Unknown User"}</p>
             <p className="text-sm text-muted-foreground">
-              {user.user_email}
+              {user?.user_email || "No email"}
             </p>
           </div>
         </div>
