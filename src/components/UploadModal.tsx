@@ -94,7 +94,7 @@ const UploadModal = ({ isOpen, onClose }: UploadModalProps) => {
         <DialogHeader>
           <DialogTitle>Upload Documents</DialogTitle>
           <DialogDescription>
-            Upload PDF documents to analyze with DataGPT
+            Upload PDF documents to analyze with SalesAdvisor
           </DialogDescription>
         </DialogHeader>
 

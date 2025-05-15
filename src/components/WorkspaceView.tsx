@@ -16,7 +16,7 @@ const WorkspaceView = () => {
         <div className="p-8 bg-gray-800 rounded-lg shadow-sm border border-gray-700 max-w-md text-center">
           <FileText className="h-12 w-12 text-[#A259FF] mx-auto mb-4" />
           <h2 className="text-2xl font-semibold text-white mb-2">
-            Welcome to DataGPT
+            Welcome to SalesAdvisor
           </h2>
           <p className="text-gray-300 mb-6">
             Select a workspace or create a new one to get started with your
@@ -43,7 +43,7 @@ const WorkspaceView = () => {
       <header className="border-b border-gray-700 p-4 bg-gray-800 shadow-sm">
         <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <h1 className="text-2xl font-semibold text-white">
-            <span className="text-[#A259FF]">DataGPT</span> /{" "}
+            <span className="text-[#A259FF]">SalesAdvisor</span> /{" "}
             {selectedWorkspace.ws_name}
           </h1>
         </div>
