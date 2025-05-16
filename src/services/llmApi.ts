@@ -1,4 +1,3 @@
-
 import { LLMResponse } from "@/types/api";
 import { v4 as uuidv4 } from "uuid";
 
@@ -28,16 +27,19 @@ export const llmApi = {
     }
   },
 
-  query: async (question: string): Promise<LLMResponse> => {
+  query: async (question: string, sessionId: string): Promise<LLMResponse> => {
     try {
+      // Create form data for x-www-form-urlencoded format
+      const formData = new URLSearchParams();
+      formData.append("question", question);
+      formData.append("session_id", sessionId);
+
       const response = await fetch(`${LLM_API_BASE_URL}/query`, {
-        method: "GET",
+        method: "POST",
         headers: {
-          "Content-Type": "application/json",
+          "Content-Type": "application/x-www-form-urlencoded",
         },
-        // Using query parameters for GET request
-        // In a real implementation, this might be a POST request with a body instead
-        body: JSON.stringify({ question }),
+        body: formData,
       });
 
       if (!response.ok) {

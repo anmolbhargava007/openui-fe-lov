@@ -17,6 +17,7 @@ const ChatView = ({ workspaceId, onUploadClick }: ChatViewProps) => {
   const { sendMessage, chatMessages, loading } = useWorkspace();
   const [query, setQuery] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [expandedSources, setExpandedSources] = useState<Record<string, boolean>>({});
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -46,28 +47,42 @@ const ChatView = ({ workspaceId, onUploadClick }: ChatViewProps) => {
 
   const filteredMessages = chatMessages[workspaceId] || [];
 
-  const renderSources = (sources: LLMSource[] | undefined) => {
+  const toggleSources = (messageId: string) => {
+    setExpandedSources(prev => ({
+      ...prev,
+      [messageId]: !prev[messageId]
+    }));
+  };
+
+  const renderSources = (sources: LLMSource[] | undefined, messageId: string) => {
     if (!sources || sources.length === 0) return null;
+    
+    const isExpanded = expandedSources[messageId] || false;
     
     return (
       <div className="mt-2">
         <button 
-          onClick={() => {}} 
+          onClick={() => toggleSources(messageId)} 
           className="text-sm text-gray-500 hover:text-gray-700 flex items-center"
         >
-          <span>Hide Citations</span>
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" viewBox="0 0 20 20" fill="currentColor">
+          <span>{isExpanded ? "Hide Citations" : "Show Citations"}</span>
+          <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 ml-1 transition-transform ${isExpanded ? 'rotate-180' : ''}`} viewBox="0 0 20 20" fill="currentColor">
             <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
           </svg>
         </button>
-        <div className="mt-2 space-y-1">
-          {sources.map((source) => (
-            <div key={source.source_id} className="flex items-center text-blue-600">
-              <FileText className="h-4 w-4 mr-1" />
-              <span className="text-sm">{source.file} (page {source.page})</span>
-            </div>
-          ))}
-        </div>
+        {isExpanded && (
+          <div className="mt-2 space-y-1 p-3 border border-gray-600 rounded-md bg-gray-800/50">
+            {sources.map((source) => (
+              <div key={source.source_id} className="mb-2 last:mb-0">
+                <div className="flex items-center text-blue-400">
+                  <FileText className="h-4 w-4 mr-1" />
+                  <span className="text-sm font-medium">{source.file} (page {source.page})</span>
+                </div>
+                <p className="text-sm text-gray-300 mt-1 pl-5">{source.summary}</p>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     );
   };
@@ -100,7 +115,7 @@ const ChatView = ({ workspaceId, onUploadClick }: ChatViewProps) => {
                 }`}
               >
                 <div className="whitespace-pre-wrap">{message.content}</div>
-                {message.type === "bot" && renderSources(message.sources)}
+                {message.type === "bot" && renderSources(message.sources, message.id)}
               </div>
             </div>
           ))

@@ -18,6 +18,7 @@ import { workspaceApi, documentApi } from "@/services/api";
 import { llmApi } from "@/services/llmApi";
 import { v4 as uuidv4 } from "uuid";
 import { useAuth } from "./AuthContext";
+import { LLM_API_BASE_URL } from "@/constants/api";
 
 interface WorkspaceContextType {
   workspaces: WorkspaceWithDocuments[];
@@ -35,6 +36,10 @@ interface WorkspaceContextType {
   chatMessages: ChatData;
 }
 
+interface SessionIdMap {
+  [workspaceId: number]: string;
+}
+
 const WorkspaceContext = createContext<WorkspaceContextType | undefined>(
   undefined
 );
@@ -47,6 +52,7 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [chatMessages, setChatMessages] = useState<ChatData>({});
+  const [sessionIds, setSessionIds] = useState<SessionIdMap>({});
 
   useEffect(() => {
     if (user?.user_id) {
@@ -54,7 +60,7 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [user?.user_id]);
 
-  const refreshWorkspaces = async () => {
+  const refreshWorkspaces = async (userId?: number) => {
     if (!user?.user_id) return;
 
     try {
@@ -229,13 +235,36 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
         return false;
       }
 
+      // Try to upload to our LLM service to get session ID
       if (selectedWorkspace.ws_id) {
         try {
-          await llmApi.uploadDocument(file, selectedWorkspace.ws_id);
+          const formData = new FormData();
+          formData.append("files", file);
+          
+          const response = await fetch(`${LLM_API_BASE_URL}/upload`, {
+            method: "POST",
+            body: formData,
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            if (data.session_id) {
+              // Save the session ID for this workspace
+              setSessionIds(prev => ({
+                ...prev,
+                [selectedWorkspace.ws_id!]: data.session_id
+              }));
+              console.log(`Session ID for workspace ${selectedWorkspace.ws_id}: ${data.session_id}`);
+            }
+          } else {
+            console.error("Failed to upload to LLM API");
+          }
         } catch (llmErr) {
           console.error("Failed to upload to LLM API:", llmErr);
         }
       }
+
+      // Continue with the regular document upload
       const response = await documentApi.upload(file, {
         ...selectedWorkspace,
         user_id: user.user_id,
@@ -305,8 +334,15 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
         };
       });
 
-      // Send message to LLM API
-      const response = await llmApi.query(message);
+      // Get session ID for this workspace
+      const sessionId = sessionIds[workspaceId];
+      
+      if (!sessionId) {
+        throw new Error("No session ID found. Please upload a document first.");
+      }
+
+      // Send message to LLM API with session ID
+      const response = await llmApi.query(message, sessionId);
 
       // Add bot response
       const botMessage: ChatMessage = {
@@ -334,7 +370,7 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
       const errorBotMessage: ChatMessage = {
         id: uuidv4(),
         content:
-          "Sorry, I couldn't process your request. Please try again later.",
+          err instanceof Error ? err.message : "Sorry, I couldn't process your request. Please try again later.",
         type: "bot",
         timestamp: Date.now(),
       };
