@@ -1,6 +1,6 @@
 import { Workspace, Document, ApiResponse } from "@/types/api";
 
-const API_BASE_URL = "http://15.206.121.90:1909/api/v1";
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 const DEFAULT_USER_ID = 1;
 
 const handleResponse = async <T>(response: Response): Promise<T> => {
