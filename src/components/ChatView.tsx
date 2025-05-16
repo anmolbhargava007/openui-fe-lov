@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from "react";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import { Button } from "@/components/ui/button";
@@ -13,7 +14,7 @@ interface ChatViewProps {
 }
 
 const ChatView = ({ workspaceId, onUploadClick }: ChatViewProps) => {
-  const { sendMessage, chatMessages, loading } = useWorkspace();
+  const { sendMessage, chatMessages, loading, currentSessionDocuments } = useWorkspace();
   const [query, setQuery] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [expandedSources, setExpandedSources] = useState<Record<string, boolean>>({});
@@ -90,6 +91,25 @@ const ChatView = ({ workspaceId, onUploadClick }: ChatViewProps) => {
 
   return (
     <div className="flex flex-col h-full">
+      {currentSessionDocuments.length > 0 && (
+        <div className="bg-gray-800 border-b border-gray-700 p-3">
+          <div className="flex items-center">
+            <FileText className="h-4 w-4 mr-2 text-[#A259FF]" />
+            <span className="text-sm font-medium text-gray-300">Current Session Documents:</span>
+          </div>
+          <div className="mt-1 flex flex-wrap gap-2">
+            {currentSessionDocuments.map((doc, index) => (
+              <div 
+                key={index} 
+                className="bg-gray-700 text-xs px-2 py-1 rounded flex items-center"
+              >
+                <span className="text-[#A259FF]">{doc}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="flex-grow overflow-y-auto p-4 space-y-6 bg-gray-900">
         {filteredMessages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center text-gray-300">

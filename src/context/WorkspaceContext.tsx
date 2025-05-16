@@ -20,7 +20,6 @@ import { workspaceApi, documentApi, promptHistoryApi } from "@/services/api";
 import { llmApi } from "@/services/llmApi";
 import { v4 as uuidv4 } from "uuid";
 import { useAuth } from "./AuthContext";
-import { LLM_API_BASE_URL } from "@/constants/api";
 
 interface WorkspaceContextType {
   workspaces: WorkspaceWithDocuments[];
@@ -35,11 +34,17 @@ interface WorkspaceContextType {
   deleteDocument: (docId: number) => Promise<void>;
   refreshWorkspaces: (userId?: number) => Promise<void>;
   sendMessage: (workspaceId: number, message: string) => Promise<void>;
+  loadPromptHistory: (prompt: ChatPrompt) => void;
   chatMessages: ChatData;
+  currentSessionDocuments: string[];
 }
 
 interface SessionIdMap {
   [workspaceId: number]: string;
+}
+
+interface SessionDocumentsMap {
+  [workspaceId: number]: string[];
 }
 
 const WorkspaceContext = createContext<WorkspaceContextType | undefined>(
@@ -60,6 +65,8 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
   const [error, setError] = useState<string | null>(null);
   const [chatMessages, setChatMessages] = useState<ChatData>({});
   const [sessionIds, setSessionIds] = useState<SessionIdMap>({});
+  const [sessionDocuments, setSessionDocuments] = useState<SessionDocumentsMap>({});
+  const [currentSessionDocuments, setCurrentSessionDocuments] = useState<string[]>([]);
 
   useEffect(() => {
     if (user?.user_id) {
@@ -69,52 +76,216 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
 
   // Load chat history when a workspace is selected
   useEffect(() => {
-    if (selectedWorkspace?.ws_id && user?.user_id && sessionIds[selectedWorkspace.ws_id]) {
-      loadChatHistory(selectedWorkspace.ws_id, user.user_id, sessionIds[selectedWorkspace.ws_id]);
+    if (selectedWorkspace?.ws_id && user?.user_id) {
+      loadLatestChatHistory(selectedWorkspace.ws_id, user.user_id);
     }
-  }, [selectedWorkspace?.ws_id, user?.user_id, sessionIds]);
+  }, [selectedWorkspace?.ws_id, user?.user_id]);
 
-  const loadChatHistory = async (wsId: number, userId: number, sessionId: string) => {
+  // Load session documents when session changes
+  useEffect(() => {
+    if (selectedWorkspace?.ws_id && sessionIds[selectedWorkspace.ws_id]) {
+      const docs = sessionDocuments[selectedWorkspace.ws_id] || [];
+      setCurrentSessionDocuments(docs);
+    }
+  }, [selectedWorkspace?.ws_id, sessionIds, sessionDocuments]);
+
+  const loadLatestChatHistory = async (wsId: number, userId: number) => {
     try {
-      // Only load history if we don't already have messages for this workspace
-      if (!chatMessages[wsId] || chatMessages[wsId].length === 0) {
-        const response = await promptHistoryApi.getPrompts(wsId, userId, sessionId, undefined, true);
+      // Get all prompts for this workspace and user
+      const response = await promptHistoryApi.getAllSessionsForWorkspace(wsId, userId);
+      
+      if (response.success && Array.isArray(response.data) && response.data.length > 0) {
+        // Group prompts by session
+        const groupedBySession: Record<string, ChatPrompt[]> = {};
+        response.data.forEach(prompt => {
+          if (!groupedBySession[prompt.session_id]) {
+            groupedBySession[prompt.session_id] = [];
+          }
+          groupedBySession[prompt.session_id].push(prompt);
+        });
         
+        // Find the latest session (with highest prompt_id)
+        let latestSession: string | null = null;
+        let latestPromptId = -1;
+        
+        Object.entries(groupedBySession).forEach(([sessionId, prompts]) => {
+          // Find highest prompt_id in this session
+          const maxPromptId = Math.max(...prompts.map(p => p.prompt_id || 0));
+          if (maxPromptId > latestPromptId) {
+            latestPromptId = maxPromptId;
+            latestSession = sessionId;
+          }
+        });
+        
+        if (latestSession) {
+          // Store session ID for this workspace
+          setSessionIds(prev => ({
+            ...prev,
+            [wsId]: latestSession
+          }));
+          
+          // Convert prompts to chat messages
+          const chatPrompts = groupedBySession[latestSession];
+          const formattedMessages: ChatMessage[] = [];
+          
+          chatPrompts.sort((a, b) => (a.prompt_id || 0) - (b.prompt_id || 0))
+            .forEach(prompt => {
+              // Create user message
+              const userMessage: ChatMessage = {
+                id: uuidv4(),
+                content: prompt.prompt_text,
+                type: 'user',
+                timestamp: Date.now() - 1000,
+              };
+              
+              // Create bot message
+              const botMessage: ChatMessage = {
+                id: uuidv4(),
+                content: prompt.response_text,
+                type: 'bot',
+                timestamp: Date.now(),
+                // Try to extract sources if available
+                sources: extractSourcesFromResponse(prompt.response_text),
+              };
+              
+              formattedMessages.push(userMessage, botMessage);
+            });
+          
+          // Update chat messages for this workspace
+          setChatMessages(prev => ({
+            ...prev,
+            [wsId]: formattedMessages
+          }));
+          
+          // Extract document names (mock implementation)
+          setSessionDocuments(prev => ({
+            ...prev,
+            [wsId]: extractDocumentNamesFromPrompts(chatPrompts)
+          }));
+          
+          console.log(`Loaded ${formattedMessages.length} messages for workspace ${wsId}`);
+        }
+      } else {
+        // No history found, clear messages
+        setChatMessages(prev => ({
+          ...prev,
+          [wsId]: []
+        }));
+      }
+    } catch (err) {
+      console.error("Error loading chat history:", err);
+    }
+  };
+
+  const loadPromptHistory = (prompt: ChatPrompt) => {
+    if (!selectedWorkspace?.ws_id || !prompt.ws_id || !prompt.session_id) return;
+    
+    try {
+      // Find all prompts in this session
+      promptHistoryApi.getPrompts(
+        prompt.ws_id,
+        prompt.user_id,
+        prompt.session_id
+      ).then(response => {
         if (response.success && Array.isArray(response.data)) {
-          const sortedHistory = response.data.sort((a, b) => {
-            return (a.prompt_id || 0) - (b.prompt_id || 0);
-          });
+          // Convert to chat messages
+          const sortedPrompts = response.data.sort(
+            (a, b) => (a.prompt_id || 0) - (b.prompt_id || 0)
+          );
           
           const formattedMessages: ChatMessage[] = [];
           
-          // Convert each prompt+response pair to user and bot messages
-          sortedHistory.forEach(item => {
+          sortedPrompts.forEach(p => {
+            // Create user message
             const userMessage: ChatMessage = {
               id: uuidv4(),
-              content: item.prompt_text,
+              content: p.prompt_text,
               type: 'user',
-              timestamp: Date.now() - 1000, // Slightly earlier than bot message
+              timestamp: Date.now() - 1000,
             };
             
+            // Create bot message
             const botMessage: ChatMessage = {
               id: uuidv4(),
-              content: item.response_text,
+              content: p.response_text,
               type: 'bot',
               timestamp: Date.now(),
-              // If we have sources info in the future, it could be added here
+              // Try to extract sources if available
+              sources: extractSourcesFromResponse(p.response_text),
             };
             
             formattedMessages.push(userMessage, botMessage);
           });
           
+          // Update chat messages for this workspace
           setChatMessages(prev => ({
             ...prev,
-            [wsId]: formattedMessages
+            [selectedWorkspace.ws_id!]: formattedMessages
           }));
+          
+          // Update session ID for this workspace
+          setSessionIds(prev => ({
+            ...prev,
+            [selectedWorkspace.ws_id!]: prompt.session_id
+          }));
+          
+          // Extract document names (mock implementation)
+          const documents = extractDocumentNamesFromPrompts(sortedPrompts);
+          setSessionDocuments(prev => ({
+            ...prev,
+            [selectedWorkspace.ws_id!]: documents
+          }));
+          setCurrentSessionDocuments(documents);
+          
+          toast.success("Loaded chat history");
+        }
+      });
+    } catch (err) {
+      console.error("Failed to load prompt history:", err);
+      toast.error("Failed to load chat history");
+    }
+  };
+
+  // Helper function to extract document names from prompts
+  const extractDocumentNamesFromPrompts = (prompts: ChatPrompt[]): string[] => {
+    const documents: string[] = [];
+    
+    // Look for document mentions in responses
+    prompts.forEach(prompt => {
+      const responseText = prompt.response_text || "";
+      
+      // This is a simplified approach - in a real app, you'd have proper metadata
+      if (responseText.includes("invoice_") || responseText.includes(".pdf")) {
+        const regex = /([a-zA-Z0-9_-]+\.pdf)/g;
+        const matches = responseText.match(regex);
+        if (matches) {
+          matches.forEach(match => {
+            if (!documents.includes(match)) {
+              documents.push(match);
+            }
+          });
         }
       }
-    } catch (err) {
-      console.error("Error loading chat history:", err);
+    });
+    
+    return documents;
+  };
+  
+  // Helper function to try to extract source information from response text
+  const extractSourcesFromResponse = (responseText: string): any[] => {
+    try {
+      // Check if the response contains a JSON part with sources
+      if (responseText.includes('"sources":')) {
+        const match = responseText.match(/\{.*"sources":\s*(\[.*?\])/s);
+        if (match && match[1]) {
+          const sourcesJson = match[1];
+          return JSON.parse(sourcesJson);
+        }
+      }
+      return [];
+    } catch (e) {
+      console.error("Failed to extract sources from response:", e);
+      return [];
     }
   };
 
@@ -304,7 +475,23 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
               ...prev,
               [selectedWorkspace.ws_id!]: result.session_id!
             }));
+            
+            // Update session documents
+            setSessionDocuments(prev => ({
+              ...prev,
+              [selectedWorkspace.ws_id!]: [file.name]
+            }));
+            
+            // Update current session documents
+            setCurrentSessionDocuments([file.name]);
+            
             console.log(`Session ID for workspace ${selectedWorkspace.ws_id}: ${result.session_id}`);
+            
+            // Clear chat messages for this workspace to start fresh
+            setChatMessages(prev => ({
+              ...prev,
+              [selectedWorkspace.ws_id!]: []
+            }));
           } else {
             console.error("Failed to upload to LLM API");
           }
@@ -473,7 +660,9 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
     deleteDocument,
     refreshWorkspaces,
     sendMessage,
+    loadPromptHistory,
     chatMessages,
+    currentSessionDocuments,
   };
 
   return (

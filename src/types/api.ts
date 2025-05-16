@@ -64,6 +64,12 @@ export interface ChatPrompt {
   user_id: number;
   session_id: string;
   is_active: boolean;
+  workspaces?: {
+    ws_name: string;
+  };
+  users?: {
+    user_name: string;
+  };
 }
 
 export interface SigninRequest {

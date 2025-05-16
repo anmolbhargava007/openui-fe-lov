@@ -1,3 +1,4 @@
+
 import { Workspace, Document, ApiResponse, ChatPrompt } from "@/types/api";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
@@ -171,4 +172,13 @@ export const promptHistoryApi = {
     const response = await fetch(url);
     return handleResponse<ApiResponse<ChatPrompt[]>>(response);
   },
+  
+  getAllSessionsForWorkspace: async (
+    wsId: number,
+    userId: number
+  ): Promise<ApiResponse<ChatPrompt[]>> => {
+    const url = `${API_BASE_URL}/prompts?ws_id=${wsId}&user_id=${userId}`;
+    const response = await fetch(url);
+    return handleResponse<ApiResponse<ChatPrompt[]>>(response);
+  }
 };

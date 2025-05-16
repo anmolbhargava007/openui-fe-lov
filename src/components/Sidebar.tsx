@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import { WorkspaceWithDocuments } from "@/types/api";
@@ -19,19 +20,27 @@ import {
   Edit,
   Trash2,
   Upload,
+  History,
 } from "lucide-react";
 import WorkspaceDialog from "./WorkspaceDialog";
 import UploadModal from "./UploadModal";
+import ChatHistoryDialog from "./ChatHistoryDialog";
 import logoWhite from "./../../public/icons/logo-white.png";
 
 const Sidebar = () => {
-  const { workspaces, selectedWorkspace, selectWorkspace, deleteWorkspace } =
-    useWorkspace();
+  const { 
+    workspaces, 
+    selectedWorkspace, 
+    selectWorkspace, 
+    deleteWorkspace,
+    loadPromptHistory
+  } = useWorkspace();
   const [searchQuery, setSearchQuery] = useState("");
   const [isCreateDialogOpen, setCreateDialogOpen] = useState(false);
-  const [editWorkspace, setEditWorkspace] =
-    useState<WorkspaceWithDocuments | null>(null);
+  const [editWorkspace, setEditWorkspace] = useState<WorkspaceWithDocuments | null>(null);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [isHistoryDialogOpen, setIsHistoryDialogOpen] = useState(false);
+  const [historyWorkspaceId, setHistoryWorkspaceId] = useState<number | null>(null);
 
   const filteredWorkspaces = searchQuery
     ? workspaces.filter((ws) =>
@@ -64,6 +73,14 @@ const Sidebar = () => {
   const handleUploadClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     setIsUploadModalOpen(true);
+  };
+
+  const handleHistoryClick = (workspace: WorkspaceWithDocuments, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (workspace.ws_id) {
+      setHistoryWorkspaceId(workspace.ws_id);
+      setIsHistoryDialogOpen(true);
+    }
   };
 
   return (
@@ -126,6 +143,16 @@ const Sidebar = () => {
               </div>
 
               <div className="flex items-center">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-white hover:bg-gray-600"
+                  onClick={(e) => handleHistoryClick(workspace, e)}
+                  title="View History"
+                >
+                  <History className="h-4 w-4" />
+                </Button>
+                
                 <Button
                   variant="ghost"
                   size="sm"
@@ -207,6 +234,17 @@ const Sidebar = () => {
         isOpen={isUploadModalOpen}
         onClose={() => setIsUploadModalOpen(false)}
       />
+
+      {historyWorkspaceId && (
+        <ChatHistoryDialog
+          isOpen={isHistoryDialogOpen}
+          onClose={() => setIsHistoryDialogOpen(false)}
+          workspaceId={historyWorkspaceId}
+          onSelectPrompt={(prompt) => {
+            loadPromptHistory(prompt);
+          }}
+        />
+      )}
     </div>
   );
 };
