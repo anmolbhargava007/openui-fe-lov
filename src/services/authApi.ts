@@ -1,7 +1,6 @@
 
-import { SigninRequest, SignupRequest, AuthResponse } from "@/types/auth";
-
-const API_BASE_URL = "http://15.206.121.90:1909/api/v1";
+import { SigninRequest, SignupRequest, AuthResponse, User } from "@/types/auth";
+import { API_BASE_URL } from "@/constants/api";
 
 const handleResponse = async <T>(response: Response): Promise<T> => {
   if (!response.ok) {

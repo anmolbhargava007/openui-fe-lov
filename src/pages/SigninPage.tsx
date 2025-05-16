@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -25,6 +25,7 @@ const formSchema = z.object({
 const SigninPage = () => {
   const navigate = useNavigate();
   const { signin } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -35,6 +36,7 @@ const SigninPage = () => {
   });
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    setIsLoading(true);
     try {
       // Create a properly typed SigninRequest object
       const signinRequest: SigninRequest = {
@@ -42,12 +44,11 @@ const SigninPage = () => {
         user_pwd: values.user_pwd,
       };
       
-      const success = await signin(signinRequest);
-      if (success) {
-        navigate("/dashboard");
-      }
+      await signin(signinRequest);
     } catch (error) {
       console.error("Login failed:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -103,9 +104,9 @@ const SigninPage = () => {
               <Button
                 type="submit"
                 className="w-full bg-[#A259FF] hover:bg-[#A259FF]/90 text-white py-2"
-                disabled={form.formState.isSubmitting}
+                disabled={isLoading}
               >
-                {form.formState.isSubmitting ? "Signing in..." : "Sign In"}
+                {isLoading ? "Signing in..." : "Sign In"}
               </Button>
             </form>
           </Form>

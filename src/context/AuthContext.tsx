@@ -1,14 +1,16 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
-import { User } from "@/types/auth";
+import { User, SigninRequest, SignupRequest } from "@/types/auth";
 import { toast } from "sonner";
+import { authApi } from "@/services/authApi";
 
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   loading: boolean;
-  signin: (user: User) => void;
+  signin: (credentials: SigninRequest) => Promise<boolean>;
+  signup: (userData: SignupRequest) => Promise<boolean>;
   logout: () => void;
 }
 
@@ -35,11 +37,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoading(false);
   }, []);
 
-  const signin = (userData: User) => {
-    setUser(userData);
-    localStorage.setItem("user", JSON.stringify(userData));
-    toast.success("Signed in successfully");
-    navigate("/dashboard");
+  const signin = async (credentials: SigninRequest): Promise<boolean> => {
+    try {
+      const response = await authApi.signin(credentials);
+      
+      if (response.success && response.data && response.data.length > 0) {
+        const userData = response.data[0];
+        setUser(userData);
+        localStorage.setItem("user", JSON.stringify(userData));
+        toast.success("Signed in successfully");
+        navigate("/dashboard");
+        return true;
+      } else {
+        toast.error(response.msg || "Failed to sign in");
+        return false;
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      toast.error("Failed to sign in. Please check your credentials.");
+      return false;
+    }
+  };
+
+  const signup = async (userData: SignupRequest): Promise<boolean> => {
+    try {
+      const response = await authApi.signup(userData);
+      
+      if (response.success) {
+        toast.success("Account created successfully. Please sign in.");
+        navigate("/signin");
+        return true;
+      } else {
+        toast.error(response.msg || "Failed to create account");
+        return false;
+      }
+    } catch (error) {
+      console.error("Signup error:", error);
+      toast.error("Failed to create account. Please try again.");
+      return false;
+    }
   };
 
   const logout = () => {
@@ -50,7 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: !!user, loading, signin, logout }}>
+    <AuthContext.Provider value={{ user, isAuthenticated: !!user, loading, signin, signup, logout }}>
       {children}
     </AuthContext.Provider>
   );
