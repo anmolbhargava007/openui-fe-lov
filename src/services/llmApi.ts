@@ -2,7 +2,7 @@
 import { LLMResponse } from "@/types/api";
 import { v4 as uuidv4 } from "uuid";
 
-const LLM_API_BASE_URL = "https://llmdemoapi.in";
+const LLM_API_BASE_URL = "http://15.206.121.90:8000";
 
 export const llmApi = {
   uploadDocument: async (file: File, workspaceId: number): Promise<boolean> => {
