@@ -28,7 +28,7 @@ export const AuthLayout = ({ protected: isProtected = false, withHeader = false 
 
   return (
     <>
-      {isProtected && withHeader && <Header />}
+      {/* {isProtected && withHeader && <Header />} */}
       <Outlet />
     </>
   );

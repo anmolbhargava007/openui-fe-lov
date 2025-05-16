@@ -338,7 +338,7 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
       const sessionId = sessionIds[workspaceId];
       
       if (!sessionId) {
-        throw new Error("No session ID found. Please upload a document first.");
+        throw new Error("No session found. Please upload a document first.");
       }
 
       // Send message to LLM API with session ID

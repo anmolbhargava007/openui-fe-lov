@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from "react";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import { Button } from "@/components/ui/button";
@@ -19,16 +18,18 @@ const ChatView = ({ workspaceId, onUploadClick }: ChatViewProps) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [expandedSources, setExpandedSources] = useState<Record<string, boolean>>({});
 
-  // Scroll to bottom when messages change
+  // 👇 Scroll to bottom when chat messages or workspace change
   useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [chatMessages]);
+    const timeout = setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, 100);
+
+    return () => clearTimeout(timeout);
+  }, [workspaceId, chatMessages]);
 
   const handleSendMessage = async () => {
     if (!query.trim()) return;
-    
+
     try {
       await sendMessage(workspaceId, query);
       setQuery("");
@@ -56,14 +57,14 @@ const ChatView = ({ workspaceId, onUploadClick }: ChatViewProps) => {
 
   const renderSources = (sources: LLMSource[] | undefined, messageId: string) => {
     if (!sources || sources.length === 0) return null;
-    
+
     const isExpanded = expandedSources[messageId] || false;
-    
+
     return (
       <div className="mt-2">
-        <button 
-          onClick={() => toggleSources(messageId)} 
-          className="text-sm text-gray-500 hover:text-gray-700 flex items-center"
+        <button
+          onClick={() => toggleSources(messageId)}
+          className="text-sm text-gray-500 hover:text-gray-300 flex items-center"
         >
           <span>{isExpanded ? "Hide Citations" : "Show Citations"}</span>
           <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 ml-1 transition-transform ${isExpanded ? 'rotate-180' : ''}`} viewBox="0 0 20 20" fill="currentColor">
@@ -89,7 +90,6 @@ const ChatView = ({ workspaceId, onUploadClick }: ChatViewProps) => {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Chat Messages */}
       <div className="flex-grow overflow-y-auto p-4 space-y-6 bg-gray-900">
         {filteredMessages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center text-gray-300">
@@ -100,26 +100,40 @@ const ChatView = ({ workspaceId, onUploadClick }: ChatViewProps) => {
             </p>
           </div>
         ) : (
-          filteredMessages.map((message) => (
-            <div
-              key={message.id}
-              className={`flex ${
-                message.type === "user" ? "justify-end" : "justify-start"
-              }`}
-            >
+          <>
+            {filteredMessages.map((message) => (
               <div
-                className={`max-w-3xl rounded-lg p-4 ${
-                  message.type === "user"
-                    ? "bg-blue-600 text-white"
-                    : "bg-gray-800 text-white"
-                }`}
+                key={message.id}
+                className={`flex ${message.type === "user" ? "justify-end" : "justify-start"}`}
               >
-                <div className="whitespace-pre-wrap">{message.content}</div>
-                {message.type === "bot" && renderSources(message.sources, message.id)}
+                <div
+                  className={`max-w-3xl rounded-lg p-4 ${
+                    message.type === "user"
+                      ? "bg-blue-600 text-white"
+                      : "bg-gray-800 text-white"
+                  }`}
+                >
+                  <div className="whitespace-pre-wrap">{message.content}</div>
+                  {message.type === "bot" && renderSources(message.sources, message.id)}
+                </div>
               </div>
-            </div>
-          ))
+            ))}
+
+            {/* 👇 Loading Bot Message Animation */}
+            {loading && (
+              <div className="flex justify-start">
+                <div className="max-w-3xl rounded-lg p-4 bg-gray-800 text-white">
+                  <div className="flex space-x-1 animate-pulse">
+                    <div className="w-2 h-2 bg-white rounded-full" />
+                    <div className="w-2 h-2 bg-white rounded-full" />
+                    <div className="w-2 h-2 bg-white rounded-full" />
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
         )}
+
         <div ref={messagesEndRef} />
       </div>
 
@@ -135,7 +149,7 @@ const ChatView = ({ workspaceId, onUploadClick }: ChatViewProps) => {
           >
             <Upload className="h-5 w-5" />
           </Button>
-          
+
           <Input
             type="text"
             placeholder="Ask about your documents..."
@@ -145,8 +159,8 @@ const ChatView = ({ workspaceId, onUploadClick }: ChatViewProps) => {
             onKeyPress={handleKeyPress}
             disabled={loading}
           />
-          
-          <Button 
+
+          <Button
             className="bg-[#A259FF] hover:bg-[#A259FF]/90 text-white"
             onClick={handleSendMessage}
             disabled={!query.trim() || loading}

@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import { WorkspaceWithDocuments } from "@/types/api";
@@ -23,12 +22,15 @@ import {
 } from "lucide-react";
 import WorkspaceDialog from "./WorkspaceDialog";
 import UploadModal from "./UploadModal";
+import logoWhite from "./../../public/icons/logo-white.png";
 
 const Sidebar = () => {
-  const { workspaces, selectedWorkspace, selectWorkspace, deleteWorkspace } = useWorkspace();
+  const { workspaces, selectedWorkspace, selectWorkspace, deleteWorkspace } =
+    useWorkspace();
   const [searchQuery, setSearchQuery] = useState("");
   const [isCreateDialogOpen, setCreateDialogOpen] = useState(false);
-  const [editWorkspace, setEditWorkspace] = useState<WorkspaceWithDocuments | null>(null);
+  const [editWorkspace, setEditWorkspace] =
+    useState<WorkspaceWithDocuments | null>(null);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
 
   const filteredWorkspaces = searchQuery
@@ -41,12 +43,18 @@ const Sidebar = () => {
     selectWorkspace(workspace);
   };
 
-  const handleEditClick = (workspace: WorkspaceWithDocuments, e: React.MouseEvent) => {
+  const handleEditClick = (
+    workspace: WorkspaceWithDocuments,
+    e: React.MouseEvent
+  ) => {
     e.stopPropagation();
     setEditWorkspace(workspace);
   };
 
-  const handleDeleteClick = async (workspace: WorkspaceWithDocuments, e: React.MouseEvent) => {
+  const handleDeleteClick = async (
+    workspace: WorkspaceWithDocuments,
+    e: React.MouseEvent
+  ) => {
     e.stopPropagation();
     if (workspace.ws_id) {
       await deleteWorkspace(workspace.ws_id);
@@ -60,8 +68,7 @@ const Sidebar = () => {
 
   return (
     <div className="h-screen flex flex-col bg-gray-800 border-r border-gray-700 w-72 overflow-hidden">
-
-      {/* New Workspace Button */}
+      <img src={logoWhite} alt="Logo" className="h-[90px] pt-1 pb-1 w-[250px]" />
       <div className="px-3 py-3">
         <Button
           onClick={() => setCreateDialogOpen(true)}
@@ -71,7 +78,6 @@ const Sidebar = () => {
         </Button>
       </div>
 
-      {/* Search Box */}
       <div className="px-3 mb-2">
         <div className="relative">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
@@ -84,7 +90,6 @@ const Sidebar = () => {
         </div>
       </div>
 
-      {/* Scrollable Workspace List */}
       <div className="flex-1 overflow-y-auto px-3 py-2 min-h-0">
         <div className="flex items-center text-sm font-medium text-gray-400 mb-2">
           <Folder className="h-4 w-4 mr-2" /> WORKSPACES
@@ -110,9 +115,12 @@ const Sidebar = () => {
                   }`}
                 />
                 <div>
-                  <p className="text-sm font-medium text-gray-200">{workspace.ws_name}</p>
+                  <p className="text-sm font-medium text-gray-200">
+                    {workspace.ws_name}
+                  </p>
                   <p className="text-xs text-gray-400 mt-0.5">
-                    {workspace.messageCount || 0} messages • {workspace.documents?.length || 0} files
+                    {workspace.messageCount || 0} messages •{" "}
+                    {workspace.documents?.length || 0} files
                   </p>
                 </div>
               </div>
@@ -138,8 +146,11 @@ const Sidebar = () => {
                       <MoreVertical className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-40 bg-gray-800 text-gray-200 border-gray-700">
-                    <DropdownMenuItem 
+                  <DropdownMenuContent
+                    align="end"
+                    className="w-40 bg-gray-800 text-gray-200 border-gray-700"
+                  >
+                    <DropdownMenuItem
                       onClick={(e) => handleEditClick(workspace, e)}
                       className="focus:bg-gray-700 focus:text-white"
                     >
@@ -170,7 +181,10 @@ const Sidebar = () => {
             <span>Documents</span>
           </div>
           <span className="font-semibold">
-            {workspaces.reduce((sum, ws) => sum + (ws.documents?.length || 0), 0)}
+            {workspaces.reduce(
+              (sum, ws) => sum + (ws.documents?.length || 0),
+              0
+            )}
           </span>
         </div>
         <div className="flex items-center justify-between text-sm text-gray-300 py-1.5">
@@ -188,7 +202,7 @@ const Sidebar = () => {
         }}
         workspace={editWorkspace}
       />
-      
+
       <UploadModal
         isOpen={isUploadModalOpen}
         onClose={() => setIsUploadModalOpen(false)}

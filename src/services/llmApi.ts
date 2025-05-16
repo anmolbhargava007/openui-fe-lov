@@ -22,7 +22,6 @@ export const llmApi = {
       return true;
     } catch (error) {
       console.error("Error uploading document to LLM API:", error);
-      // Return false but don't throw error to continue with original API
       return false;
     }
   },

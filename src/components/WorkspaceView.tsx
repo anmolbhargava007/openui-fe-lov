@@ -1,10 +1,10 @@
-
 import React, { useState } from "react";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import { FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ChatView from "./ChatView";
 import UploadModal from "./UploadModal";
+import UserMenu from "./UserMenu";
 
 const WorkspaceView = () => {
   const { selectedWorkspace } = useWorkspace();
@@ -39,27 +39,16 @@ const WorkspaceView = () => {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Workspace Header */}
-      <header className="border-b border-gray-700 p-4 bg-gray-800 shadow-sm">
-        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <h1 className="text-2xl font-semibold text-white">
-            <span className="text-[#A259FF]">SalesAdvisor</span> /{" "}
-            {selectedWorkspace.ws_name}
-          </h1>
-        </div>
-      </header>
 
-      {/* Chat Interface */}
       <div className="flex-grow overflow-hidden">
         {selectedWorkspace.ws_id && (
-          <ChatView 
-            workspaceId={selectedWorkspace.ws_id} 
+          <ChatView
+            workspaceId={selectedWorkspace.ws_id}
             onUploadClick={() => setIsUploadModalOpen(true)}
           />
         )}
       </div>
 
-      {/* Upload Modal */}
       <UploadModal
         isOpen={isUploadModalOpen}
         onClose={() => setIsUploadModalOpen(false)}
