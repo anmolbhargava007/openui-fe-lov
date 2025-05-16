@@ -1,11 +1,9 @@
 
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React from "react";
+import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { toast } from "sonner";
-
+import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -16,33 +14,30 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { 
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue
+  SelectValue,
 } from "@/components/ui/select";
-import { authApi } from "@/services/authApi";
+import { useAuth } from "@/context/AuthContext";
+import { SignupRequest } from "@/types/api";
 
-const signupSchema = z.object({
-  user_name: z.string().min(2, { message: "Name must be at least 2 characters" }),
-  user_email: z.string().email({ message: "Please enter a valid email address" }),
-  user_pwd: z.string().min(6, { message: "Password must be at least 6 characters" }),
-  user_mobile: z.string().min(10, { message: "Mobile number must be at least 10 digits" }),
-  gender: z.enum(["MALE", "FEMALE", "OTHER"], {
-    required_error: "Please select a gender",
-  }),
+const formSchema = z.object({
+  user_name: z.string().min(2, "Name must be at least 2 characters"),
+  user_email: z.string().email("Invalid email address"),
+  user_pwd: z.string().min(6, "Password must be at least 6 characters"),
+  user_mobile: z.string().min(10, "Mobile number must be at least 10 digits"),
+  gender: z.enum(["MALE", "FEMALE", "OTHER"]),
 });
 
-type SignupFormValues = z.infer<typeof signupSchema>;
-
 const SignupPage = () => {
-  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const { signup } = useAuth();
 
-  const form = useForm<SignupFormValues>({
-    resolver: zodResolver(signupSchema),
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
     defaultValues: {
       user_name: "",
       user_email: "",
@@ -52,129 +47,155 @@ const SignupPage = () => {
     },
   });
 
-  const onSubmit = async (values: SignupFormValues) => {
-    setIsLoading(true);
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
-      const response = await authApi.signup({
-        ...values,
+      // Create a properly typed SignupRequest object
+      const signupRequest: SignupRequest = {
+        user_name: values.user_name,
+        user_email: values.user_email,
+        user_pwd: values.user_pwd,
+        user_mobile: values.user_mobile,
+        gender: values.gender,
         is_active: true,
-      });
+      };
       
-      if (response.success) {
-        toast.success("Account created successfully. Please sign in.");
+      const success = await signup(signupRequest);
+      if (success) {
         navigate("/signin");
-      } else {
-        toast.error(response.msg || "Failed to create account");
       }
     } catch (error) {
-      console.error("Signup error:", error);
-      toast.error("Failed to create account. Please try again.");
-    } finally {
-      setIsLoading(false);
+      console.error("Signup failed:", error);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <div className="w-full max-w-md space-y-8">
+    <div className="h-full flex flex-col items-center justify-center bg-gradient-to-b from-gray-900 to-gray-800 p-4">
+      <div className="w-full max-w-md mx-auto space-y-8">
         <div className="text-center">
-          <h1 className="text-3xl font-bold">Create an account</h1>
-          <p className="mt-2 text-gray-600">Sign up to get started</p>
+          <h1 className="text-3xl font-bold text-white">Create Account</h1>
+          <p className="text-gray-400 mt-2">Join SalesAdvisor today</p>
         </div>
-        
-        <div className="bg-white p-8 rounded-lg shadow-md">
+
+        <div className="bg-gray-800 rounded-lg shadow-md p-6 border border-gray-700">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
                 control={form.control}
                 name="user_name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Name</FormLabel>
+                    <FormLabel className="text-white">Full Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="John Doe" {...field} />
+                      <Input
+                        placeholder="John Doe"
+                        className="bg-gray-700 border-gray-600 text-white"
+                        {...field}
+                      />
                     </FormControl>
-                    <FormMessage />
+                    <FormMessage className="text-red-400" />
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={form.control}
                 name="user_email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel className="text-white">Email</FormLabel>
                     <FormControl>
-                      <Input placeholder="email@example.com" {...field} />
+                      <Input
+                        placeholder="name@example.com"
+                        type="email"
+                        className="bg-gray-700 border-gray-600 text-white"
+                        {...field}
+                      />
                     </FormControl>
-                    <FormMessage />
+                    <FormMessage className="text-red-400" />
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={form.control}
                 name="user_pwd"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Password</FormLabel>
+                    <FormLabel className="text-white">Password</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="******" {...field} />
+                      <Input
+                        placeholder="******"
+                        type="password"
+                        className="bg-gray-700 border-gray-600 text-white"
+                        {...field}
+                      />
                     </FormControl>
-                    <FormMessage />
+                    <FormMessage className="text-red-400" />
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={form.control}
                 name="user_mobile"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Mobile Number</FormLabel>
+                    <FormLabel className="text-white">Mobile Number</FormLabel>
                     <FormControl>
-                      <Input placeholder="9876543210" {...field} />
+                      <Input
+                        placeholder="9876543210"
+                        className="bg-gray-700 border-gray-600 text-white"
+                        {...field}
+                      />
                     </FormControl>
-                    <FormMessage />
+                    <FormMessage className="text-red-400" />
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={form.control}
                 name="gender"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Gender</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormLabel className="text-white">Gender</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
                       <FormControl>
-                        <SelectTrigger>
+                        <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
                           <SelectValue placeholder="Select gender" />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent>
+                      <SelectContent className="bg-gray-700 border-gray-600 text-white">
                         <SelectItem value="MALE">Male</SelectItem>
                         <SelectItem value="FEMALE">Female</SelectItem>
                         <SelectItem value="OTHER">Other</SelectItem>
                       </SelectContent>
                     </Select>
-                    <FormMessage />
+                    <FormMessage className="text-red-400" />
                   </FormItem>
                 )}
               />
-              
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Creating account..." : "Sign Up"}
+
+              <Button
+                type="submit"
+                className="w-full bg-[#A259FF] hover:bg-[#A259FF]/90 text-white py-2 mt-2"
+                disabled={form.formState.isSubmitting}
+              >
+                {form.formState.isSubmitting ? "Creating Account..." : "Sign Up"}
               </Button>
             </form>
           </Form>
-          
+
           <div className="mt-6 text-center text-sm">
-            <span className="text-gray-600">Already have an account?</span>{" "}
-            <Link to="/signin" className="text-primary font-semibold hover:underline">
-              Sign in
-            </Link>
+            <p className="text-gray-400">
+              Already have an account?{" "}
+              <Link to="/signin" className="text-[#A259FF] hover:underline">
+                Sign In
+              </Link>
+            </p>
           </div>
         </div>
       </div>

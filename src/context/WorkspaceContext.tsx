@@ -1,3 +1,4 @@
+
 import React, {
   createContext,
   useState,
@@ -13,8 +14,9 @@ import {
   ChatMessage,
   ChatData,
   LLMResponse,
+  ChatPrompt,
 } from "@/types/api";
-import { workspaceApi, documentApi } from "@/services/api";
+import { workspaceApi, documentApi, promptHistoryApi } from "@/services/api";
 import { llmApi } from "@/services/llmApi";
 import { v4 as uuidv4 } from "uuid";
 import { useAuth } from "./AuthContext";
@@ -44,6 +46,11 @@ const WorkspaceContext = createContext<WorkspaceContextType | undefined>(
   undefined
 );
 
+// Default values for LLM model usage
+const DEFAULT_MODEL_NAME = "llama3.2:latest";
+const DEFAULT_TEMPERATURE = 1.0;
+const DEFAULT_TOKEN_USAGE = 100;
+
 export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
   const [workspaces, setWorkspaces] = useState<WorkspaceWithDocuments[]>([]);
@@ -59,6 +66,57 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
       refreshWorkspaces();
     }
   }, [user?.user_id]);
+
+  // Load chat history when a workspace is selected
+  useEffect(() => {
+    if (selectedWorkspace?.ws_id && user?.user_id && sessionIds[selectedWorkspace.ws_id]) {
+      loadChatHistory(selectedWorkspace.ws_id, user.user_id, sessionIds[selectedWorkspace.ws_id]);
+    }
+  }, [selectedWorkspace?.ws_id, user?.user_id, sessionIds]);
+
+  const loadChatHistory = async (wsId: number, userId: number, sessionId: string) => {
+    try {
+      // Only load history if we don't already have messages for this workspace
+      if (!chatMessages[wsId] || chatMessages[wsId].length === 0) {
+        const response = await promptHistoryApi.getPrompts(wsId, userId, sessionId, undefined, true);
+        
+        if (response.success && Array.isArray(response.data)) {
+          const sortedHistory = response.data.sort((a, b) => {
+            return (a.prompt_id || 0) - (b.prompt_id || 0);
+          });
+          
+          const formattedMessages: ChatMessage[] = [];
+          
+          // Convert each prompt+response pair to user and bot messages
+          sortedHistory.forEach(item => {
+            const userMessage: ChatMessage = {
+              id: uuidv4(),
+              content: item.prompt_text,
+              type: 'user',
+              timestamp: Date.now() - 1000, // Slightly earlier than bot message
+            };
+            
+            const botMessage: ChatMessage = {
+              id: uuidv4(),
+              content: item.response_text,
+              type: 'bot',
+              timestamp: Date.now(),
+              // If we have sources info in the future, it could be added here
+            };
+            
+            formattedMessages.push(userMessage, botMessage);
+          });
+          
+          setChatMessages(prev => ({
+            ...prev,
+            [wsId]: formattedMessages
+          }));
+        }
+      }
+    } catch (err) {
+      console.error("Error loading chat history:", err);
+    }
+  };
 
   const refreshWorkspaces = async (userId?: number) => {
     if (!user?.user_id) return;
@@ -172,7 +230,7 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
       }
       const response = await workspaceApi.update({
         ...workspace,
-        user_id: user.user_id,
+        user_id: user?.user_id || 1,
       });
 
       if (response.success) {
@@ -235,27 +293,18 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
         return false;
       }
 
-      // Try to upload to our LLM service to get session ID
+      // Upload to LLM service to get session ID
       if (selectedWorkspace.ws_id) {
         try {
-          const formData = new FormData();
-          formData.append("files", file);
+          const result = await llmApi.uploadDocument(file, selectedWorkspace.ws_id);
           
-          const response = await fetch(`${LLM_API_BASE_URL}/upload`, {
-            method: "POST",
-            body: formData,
-          });
-          
-          if (response.ok) {
-            const data = await response.json();
-            if (data.session_id) {
-              // Save the session ID for this workspace
-              setSessionIds(prev => ({
-                ...prev,
-                [selectedWorkspace.ws_id!]: data.session_id
-              }));
-              console.log(`Session ID for workspace ${selectedWorkspace.ws_id}: ${data.session_id}`);
-            }
+          if (result.success && result.session_id) {
+            // Save the session ID for this workspace
+            setSessionIds(prev => ({
+              ...prev,
+              [selectedWorkspace.ws_id!]: result.session_id!
+            }));
+            console.log(`Session ID for workspace ${selectedWorkspace.ws_id}: ${result.session_id}`);
           } else {
             console.error("Failed to upload to LLM API");
           }
@@ -267,7 +316,7 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
       // Continue with the regular document upload
       const response = await documentApi.upload(file, {
         ...selectedWorkspace,
-        user_id: user.user_id,
+        user_id: user?.user_id || 1,
       });
 
       if (response.success) {
@@ -316,6 +365,11 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
     message: string
   ): Promise<void> => {
     try {
+      if (!user?.user_id) {
+        toast.error("User not authenticated");
+        return;
+      }
+      
       setLoading(true);
 
       // Add user message to state immediately
@@ -360,6 +414,25 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
           [workspaceId]: [...workspaceMessages, botMessage],
         };
       });
+
+      // Save the chat history to the API
+      try {
+        const promptData: ChatPrompt = {
+          prompt_text: message,
+          response_text: response.answer,
+          model_name: DEFAULT_MODEL_NAME,
+          temperature: DEFAULT_TEMPERATURE,
+          token_usage: DEFAULT_TOKEN_USAGE,
+          ws_id: workspaceId,
+          user_id: user.user_id,
+          session_id: sessionId,
+          is_active: true
+        };
+        
+        await promptHistoryApi.savePrompt(promptData);
+      } catch (saveErr) {
+        console.error("Failed to save prompt history:", saveErr);
+      }
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : "Failed to send message";

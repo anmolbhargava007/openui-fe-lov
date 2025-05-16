@@ -1,10 +1,11 @@
+
 import { LLMResponse } from "@/types/api";
 import { v4 as uuidv4 } from "uuid";
 
 const LLM_API_BASE_URL = import.meta.env.VITE_API_LLM_URL;
 
 export const llmApi = {
-  uploadDocument: async (file: File, workspaceId: number): Promise<boolean> => {
+  uploadDocument: async (file: File, workspaceId: number): Promise<{ success: boolean; session_id?: string }> => {
     try {
       const formData = new FormData();
       formData.append("files", file);
@@ -19,10 +20,14 @@ export const llmApi = {
         throw new Error("Failed to upload document to LLM API");
       }
 
-      return true;
+      const data = await response.json();
+      return {
+        success: true,
+        session_id: data.session_id
+      };
     } catch (error) {
       console.error("Error uploading document to LLM API:", error);
-      return false;
+      return { success: false };
     }
   },
 

@@ -1,11 +1,9 @@
 
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React from "react";
+import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { toast } from "sonner";
-
+import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -16,56 +14,52 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { authApi } from "@/services/authApi";
 import { useAuth } from "@/context/AuthContext";
-import logo from "./../../public/icons/logo-light.png"
+import { SigninRequest } from "@/types/api";
 
-const signinSchema = z.object({
-  user_email: z.string().email({ message: "Please enter a valid email address" }),
-  user_pwd: z.string().min(6, { message: "Password must be at least 6 characters" }),
+const formSchema = z.object({
+  user_email: z.string().email("Invalid email address"),
+  user_pwd: z.string().min(6, "Password must be at least 6 characters"),
 });
 
-type SigninFormValues = z.infer<typeof signinSchema>;
-
 const SigninPage = () => {
-  const [isLoading, setIsLoading] = useState(false);
-  const { signin } = useAuth();
   const navigate = useNavigate();
+  const { signin } = useAuth();
 
-  const form = useForm<SigninFormValues>({
-    resolver: zodResolver(signinSchema),
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
     defaultValues: {
       user_email: "",
       user_pwd: "",
     },
   });
 
-  const onSubmit = async (values: SigninFormValues) => {
-    setIsLoading(true);
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
-      const response = await authApi.signin(values);
+      // Create a properly typed SigninRequest object
+      const signinRequest: SigninRequest = {
+        user_email: values.user_email,
+        user_pwd: values.user_pwd,
+      };
       
-      if (response.success && response.data && response.data.length > 0) {
-        signin(response.data[0]);
-      } else {
-        toast.error(response.msg || "Failed to sign in");
+      const success = await signin(signinRequest);
+      if (success) {
+        navigate("/dashboard");
       }
     } catch (error) {
-      console.error("Login error:", error);
-      toast.error("Failed to sign in. Please check your credentials.");
-    } finally {
-      setIsLoading(false);
+      console.error("Login failed:", error);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <div className="w-full max-w-md space-y-8">
+    <div className="h-full flex flex-col items-center justify-center bg-gradient-to-b from-gray-900 to-gray-800 p-4">
+      <div className="w-full max-w-md mx-auto space-y-8">
         <div className="text-center">
-          <img src={logo} alt="logo" />
+          <h1 className="text-3xl font-bold text-white">Sign In</h1>
+          <p className="text-gray-400 mt-2">Welcome back to SalesAdvisor</p>
         </div>
-        <div className="bg-white p-8 rounded-lg shadow-md">
-          <p className="mt-1 text-center mb-3 text-gray-600">Please Sign in to continue</p>
+
+        <div className="bg-gray-800 rounded-lg shadow-md p-6 border border-gray-700">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <FormField
@@ -73,38 +67,56 @@ const SigninPage = () => {
                 name="user_email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel className="text-white">Email</FormLabel>
                     <FormControl>
-                      <Input placeholder="email@example.com" {...field} />
+                      <Input
+                        placeholder="name@example.com"
+                        type="email"
+                        className="bg-gray-700 border-gray-600 text-white"
+                        {...field}
+                      />
                     </FormControl>
-                    <FormMessage />
+                    <FormMessage className="text-red-400" />
                   </FormItem>
                 )}
               />
+
               <FormField
                 control={form.control}
                 name="user_pwd"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Password</FormLabel>
+                    <FormLabel className="text-white">Password</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="******" {...field} />
+                      <Input
+                        placeholder="******"
+                        type="password"
+                        className="bg-gray-700 border-gray-600 text-white"
+                        {...field}
+                      />
                     </FormControl>
-                    <FormMessage />
+                    <FormMessage className="text-red-400" />
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Signing in..." : "Sign In"}
+
+              <Button
+                type="submit"
+                className="w-full bg-[#A259FF] hover:bg-[#A259FF]/90 text-white py-2"
+                disabled={form.formState.isSubmitting}
+              >
+                {form.formState.isSubmitting ? "Signing in..." : "Sign In"}
               </Button>
             </form>
           </Form>
-          
+
           <div className="mt-6 text-center text-sm">
-            <span className="text-gray-600">Don't have an account?</span>{" "}
-            <Link to="/signup" className="text-primary font-semibold hover:underline">
-              Create an account
-            </Link>
+            <p className="text-gray-400">
+              Don't have an account?{" "}
+              <Link to="/signup" className="text-[#A259FF] hover:underline">
+                Sign Up
+              </Link>
+            </p>
           </div>
         </div>
       </div>

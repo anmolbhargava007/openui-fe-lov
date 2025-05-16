@@ -1,4 +1,4 @@
-import { Workspace, Document, ApiResponse } from "@/types/api";
+import { Workspace, Document, ApiResponse, ChatPrompt } from "@/types/api";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 const DEFAULT_USER_ID = 1;
@@ -141,5 +141,34 @@ export const documentApi = {
       }),
     });
     return handleResponse<ApiResponse<null>>(response);
+  },
+};
+
+export const promptHistoryApi = {
+  savePrompt: async (promptData: ChatPrompt): Promise<ApiResponse<ChatPrompt>> => {
+    const response = await fetch(`${API_BASE_URL}/prompts`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(promptData),
+    });
+    return handleResponse<ApiResponse<ChatPrompt>>(response);
+  },
+
+  getPrompts: async (
+    wsId: number,
+    userId: number,
+    sessionId: string,
+    promptId?: number,
+    isActive?: boolean
+  ): Promise<ApiResponse<ChatPrompt[]>> => {
+    let url = `${API_BASE_URL}/prompts?ws_id=${wsId}&user_id=${userId}&session_id=${sessionId}`;
+    
+    if (promptId) url += `&prompt_id=${promptId}`;
+    if (isActive !== undefined) url += `&is_active=${isActive}`;
+    
+    const response = await fetch(url);
+    return handleResponse<ApiResponse<ChatPrompt[]>>(response);
   },
 };
