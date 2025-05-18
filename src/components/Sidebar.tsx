@@ -143,7 +143,7 @@ const Sidebar = () => {
                     {workspace.ws_name}
                   </p>
                   <p className="text-xs text-gray-400 mt-0.5">
-                    {workspace.messageCount || 0} messages •{" "}
+                    {/* {workspace.messageCount || 0} messages •{" "} */}
                     {workspace.documents?.length || 0} files
                   </p>
                 </div>
