@@ -1,6 +1,6 @@
 import UserMenu from "./UserMenu";
 import { useAuth } from "@/context/AuthContext";
-import logo from "./../../public/icons/logo-light.png";
+import logo from "./../../public/icons/logo-light1.png";
 
 const Header = () => {
   const { isAuthenticated } = useAuth();

@@ -1,9 +1,8 @@
-
 import React, { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -29,7 +28,9 @@ const formSchema = z.object({
   user_email: z.string().email("Invalid email address"),
   user_pwd: z.string().min(6, "Password must be at least 6 characters"),
   user_mobile: z.string().min(10, "Mobile number must be at least 10 digits"),
-  gender: z.enum(["MALE", "FEMALE", "OTHER"]),
+  gender: z.enum(["MALE", "FEMALE", "OTHER"], {
+    required_error: "Please select a gender",
+  }),
 });
 
 const SignupPage = () => {
@@ -51,17 +52,12 @@ const SignupPage = () => {
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
     try {
-      // Create a properly typed SignupRequest object
       const signupRequest: SignupRequest = {
-        user_name: values.user_name,
-        user_email: values.user_email,
-        user_pwd: values.user_pwd,
-        user_mobile: values.user_mobile,
-        gender: values.gender,
+        ...(values as Omit<SignupRequest, "is_active">),
         is_active: true,
       };
-      
       await signup(signupRequest);
+      navigate("/signin");
     } catch (error) {
       console.error("Signup failed:", error);
     } finally {
@@ -70,30 +66,26 @@ const SignupPage = () => {
   };
 
   return (
-    <div className="h-full flex flex-col items-center justify-center bg-gradient-to-b from-gray-900 to-gray-800 p-4">
-      <div className="w-full max-w-md mx-auto space-y-8">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+      <div className="w-full max-w-md space-y-8">
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-white">Create Account</h1>
-          <p className="text-gray-400 mt-2">Join SalesAdvisor today</p>
+          <h1 className="text-3xl font-bold">Create an account</h1>
+          <p className="mt-2 text-gray-600">Sign up to get started</p>
         </div>
 
-        <div className="bg-gray-800 rounded-lg shadow-md p-6 border border-gray-700">
+        <div className="bg-white p-8 rounded-lg shadow-md">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
               <FormField
                 control={form.control}
                 name="user_name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-white">Full Name</FormLabel>
+                    <FormLabel>Name</FormLabel>
                     <FormControl>
-                      <Input
-                        placeholder="John Doe"
-                        className="bg-gray-700 border-gray-600 text-white"
-                        {...field}
-                      />
+                      <Input placeholder="John Doe" {...field} />
                     </FormControl>
-                    <FormMessage className="text-red-400" />
+                    <FormMessage />
                   </FormItem>
                 )}
               />
@@ -103,16 +95,11 @@ const SignupPage = () => {
                 name="user_email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-white">Email</FormLabel>
+                    <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input
-                        placeholder="name@example.com"
-                        type="email"
-                        className="bg-gray-700 border-gray-600 text-white"
-                        {...field}
-                      />
+                      <Input placeholder="email@example.com" {...field} />
                     </FormControl>
-                    <FormMessage className="text-red-400" />
+                    <FormMessage />
                   </FormItem>
                 )}
               />
@@ -122,16 +109,11 @@ const SignupPage = () => {
                 name="user_pwd"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-white">Password</FormLabel>
+                    <FormLabel>Password</FormLabel>
                     <FormControl>
-                      <Input
-                        placeholder="******"
-                        type="password"
-                        className="bg-gray-700 border-gray-600 text-white"
-                        {...field}
-                      />
+                      <Input type="password" placeholder="******" {...field} />
                     </FormControl>
-                    <FormMessage className="text-red-400" />
+                    <FormMessage />
                   </FormItem>
                 )}
               />
@@ -141,15 +123,11 @@ const SignupPage = () => {
                 name="user_mobile"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-white">Mobile Number</FormLabel>
+                    <FormLabel>Mobile Number</FormLabel>
                     <FormControl>
-                      <Input
-                        placeholder="9876543210"
-                        className="bg-gray-700 border-gray-600 text-white"
-                        {...field}
-                      />
+                      <Input placeholder="9876543210" {...field} />
                     </FormControl>
-                    <FormMessage className="text-red-400" />
+                    <FormMessage />
                   </FormItem>
                 )}
               />
@@ -159,44 +137,41 @@ const SignupPage = () => {
                 name="gender"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-white">Gender</FormLabel>
+                    <FormLabel>Gender</FormLabel>
                     <Select
                       onValueChange={field.onChange}
                       defaultValue={field.value}
                     >
                       <FormControl>
-                        <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
+                        <SelectTrigger>
                           <SelectValue placeholder="Select gender" />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent className="bg-gray-700 border-gray-600 text-white">
+                      <SelectContent>
                         <SelectItem value="MALE">Male</SelectItem>
                         <SelectItem value="FEMALE">Female</SelectItem>
                         <SelectItem value="OTHER">Other</SelectItem>
                       </SelectContent>
                     </Select>
-                    <FormMessage className="text-red-400" />
+                    <FormMessage />
                   </FormItem>
                 )}
               />
 
-              <Button
-                type="submit"
-                className="w-full bg-[#A259FF] hover:bg-[#A259FF]/90 text-white py-2 mt-2"
-                disabled={isLoading}
-              >
-                {isLoading ? "Creating Account..." : "Sign Up"}
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? "Creating account..." : "Sign Up"}
               </Button>
             </form>
           </Form>
 
           <div className="mt-6 text-center text-sm">
-            <p className="text-gray-400">
-              Already have an account?{" "}
-              <Link to="/signin" className="text-[#A259FF] hover:underline">
-                Sign In
-              </Link>
-            </p>
+            <span className="text-gray-600">Already have an account?</span>{" "}
+            <Link
+              to="/signin"
+              className="text-primary font-semibold hover:underline"
+            >
+              Sign in
+            </Link>
           </div>
         </div>
       </div>

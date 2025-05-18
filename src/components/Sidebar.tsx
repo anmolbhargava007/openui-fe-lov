@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import { WorkspaceWithDocuments } from "@/types/api";
@@ -28,19 +27,22 @@ import ChatHistoryDialog from "./ChatHistoryDialog";
 import logoWhite from "./../../public/icons/logo-white.png";
 
 const Sidebar = () => {
-  const { 
-    workspaces, 
-    selectedWorkspace, 
-    selectWorkspace, 
+  const {
+    workspaces,
+    selectedWorkspace,
+    selectWorkspace,
     deleteWorkspace,
-    loadPromptHistory
+    loadPromptHistory,
   } = useWorkspace();
   const [searchQuery, setSearchQuery] = useState("");
   const [isCreateDialogOpen, setCreateDialogOpen] = useState(false);
-  const [editWorkspace, setEditWorkspace] = useState<WorkspaceWithDocuments | null>(null);
+  const [editWorkspace, setEditWorkspace] =
+    useState<WorkspaceWithDocuments | null>(null);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [isHistoryDialogOpen, setIsHistoryDialogOpen] = useState(false);
-  const [historyWorkspaceId, setHistoryWorkspaceId] = useState<number | null>(null);
+  const [historyWorkspaceId, setHistoryWorkspaceId] = useState<number | null>(
+    null
+  );
 
   const filteredWorkspaces = searchQuery
     ? workspaces.filter((ws) =>
@@ -75,7 +77,10 @@ const Sidebar = () => {
     setIsUploadModalOpen(true);
   };
 
-  const handleHistoryClick = (workspace: WorkspaceWithDocuments, e: React.MouseEvent) => {
+  const handleHistoryClick = (
+    workspace: WorkspaceWithDocuments,
+    e: React.MouseEvent
+  ) => {
     e.stopPropagation();
     if (workspace.ws_id) {
       setHistoryWorkspaceId(workspace.ws_id);
@@ -85,7 +90,9 @@ const Sidebar = () => {
 
   return (
     <div className="h-screen flex flex-col bg-gray-800 border-r border-gray-700 w-72 overflow-hidden">
-      <img src={logoWhite} alt="Logo" className="h-[90px] pt-1 pb-1 w-[250px]" />
+      <div className="flex justify-center">
+        <img src={logoWhite} alt="Logo" className="w-64 h-[85px] mx-auto p-1" />
+      </div>
       <div className="px-3 py-3">
         <Button
           onClick={() => setCreateDialogOpen(true)}
@@ -152,7 +159,7 @@ const Sidebar = () => {
                 >
                   <History className="h-4 w-4" />
                 </Button>
-                
+
                 <Button
                   variant="ghost"
                   size="sm"

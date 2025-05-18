@@ -33,7 +33,6 @@ export const llmApi = {
 
   query: async (question: string, sessionId: string): Promise<LLMResponse> => {
     try {
-      // Create form data for x-www-form-urlencoded format
       const formData = new URLSearchParams();
       formData.append("question", question);
       formData.append("session_id", sessionId);
@@ -54,9 +53,8 @@ export const llmApi = {
     } catch (error) {
       console.error("Error querying LLM API:", error);
       
-      // Return mock data for testing when API fails
       return {
-        answer: `This is a mock answer to your question: "${question}". The LLM API is currently unavailable.`,
+        answer: `The server is currently down. Please contact your administrator for assistance.`,
         sources: [
           {
             source_id: uuidv4(),

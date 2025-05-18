@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 import { ScrollArea } from "./ui/scroll-area";
@@ -23,11 +22,11 @@ interface SessionGroup {
   documents: string[];
 }
 
-const ChatHistoryDialog = ({ 
-  isOpen, 
-  onClose, 
-  workspaceId, 
-  onSelectPrompt 
+const ChatHistoryDialog = ({
+  isOpen,
+  onClose,
+  workspaceId,
+  onSelectPrompt,
 }: ChatHistoryDialogProps) => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
@@ -42,53 +41,38 @@ const ChatHistoryDialog = ({
 
   const loadHistory = async () => {
     if (!user?.user_id) return;
-    
     try {
       setLoading(true);
-      const response = await promptHistoryApi.getAllSessionsForWorkspace(workspaceId, user.user_id);
-      
+      const response = await promptHistoryApi.getAllSessionsForWorkspace(
+        workspaceId,
+        user.user_id
+      );
+
       if (response.success && Array.isArray(response.data)) {
-        // Group prompts by session_id
         const groupedBySession: Record<string, ChatPrompt[]> = {};
-        
-        response.data.forEach(prompt => {
+        response.data.forEach((prompt) => {
           if (!groupedBySession[prompt.session_id]) {
             groupedBySession[prompt.session_id] = [];
           }
           groupedBySession[prompt.session_id].push(prompt);
         });
-        
-        // Convert to array of session groups and sort each session's prompts by prompt_id
+
         const groups = Object.entries(groupedBySession).map(([sessionId, prompts]) => {
-          // Sort prompts by id within each session
-          const sortedPrompts = [...prompts].sort((a, b) => 
-            (a.prompt_id || 0) - (b.prompt_id || 0)
+          const sortedPrompts = [...prompts].sort(
+            (a, b) => (a.prompt_id || 0) - (b.prompt_id || 0)
           );
-          
-          // Extract document names from response texts (mock implementation)
           const documents = extractDocumentNames(sortedPrompts);
-          
-          // Format date from the first prompt as session creation time
           const firstPromptTime = new Date().toLocaleDateString();
-          
-          return {
-            sessionId,
-            prompts: sortedPrompts,
-            firstPromptTime,
-            documents
-          };
+          return { sessionId, prompts: sortedPrompts, firstPromptTime, documents };
         });
-        
-        // Sort sessions by the latest prompt_id in descending order
+
         const sortedGroups = groups.sort((a, b) => {
           const aLatestId = a.prompts[a.prompts.length - 1]?.prompt_id || 0;
           const bLatestId = b.prompts[b.prompts.length - 1]?.prompt_id || 0;
           return bLatestId - aLatestId;
         });
-        
+
         setSessionGroups(sortedGroups);
-        
-        // Automatically expand the most recent session
         if (sortedGroups.length > 0) {
           setExpandedSession(sortedGroups[0].sessionId);
         }
@@ -101,29 +85,19 @@ const ChatHistoryDialog = ({
     }
   };
 
-  // Mock function to extract document names from prompts
-  // In a real implementation, you would get this from the session metadata or document API
   const extractDocumentNames = (prompts: ChatPrompt[]): string[] => {
     const documents: string[] = [];
-    
-    // Look for document mentions in responses
-    prompts.forEach(prompt => {
+    prompts.forEach((prompt) => {
       const responseText = prompt.response_text || "";
-      
-      // This is a simplified approach - in a real app, you'd have proper metadata
       if (responseText.includes("invoice_") || responseText.includes(".pdf")) {
-        const regex = /([a-zA-Z0-9_-]+\.pdf)/g;
-        const matches = responseText.match(regex);
-        if (matches) {
-          matches.forEach(match => {
-            if (!documents.includes(match)) {
-              documents.push(match);
-            }
-          });
-        }
+        const matches = responseText.match(/([a-zA-Z0-9_-]+\.pdf)/g);
+        matches?.forEach((match) => {
+          if (!documents.includes(match)) {
+            documents.push(match);
+          }
+        });
       }
     });
-    
     return documents;
   };
 
@@ -138,57 +112,61 @@ const ChatHistoryDialog = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md bg-zinc-900 text-white rounded-xl border border-zinc-700 shadow-lg">
         <DialogHeader>
-          <DialogTitle className="flex items-center">
-            <History className="mr-2 h-5 w-5 text-[#A259FF]" />
+          <DialogTitle className="flex items-center gap-2 text-lg text-white">
+            <History className="h-5 w-5 text-purple-400" />
             Chat History
           </DialogTitle>
         </DialogHeader>
-        
-        <ScrollArea className="h-[60vh] pr-3">
+
+        <ScrollArea className="h-[60vh] pr-2">
           {loading ? (
             <div className="flex justify-center py-8">
-              <div className="animate-spin h-8 w-8 border-4 border-[#A259FF] rounded-full border-t-transparent"></div>
+              <div className="animate-spin h-8 w-8 border-4 border-purple-500 rounded-full border-t-transparent" />
             </div>
           ) : sessionGroups.length > 0 ? (
             <div className="space-y-4">
               {sessionGroups.map((group) => (
-                <div key={group.sessionId} className="bg-gray-800 rounded-md overflow-hidden">
+                <div key={group.sessionId} className="bg-zinc-800 rounded-lg shadow-sm">
                   <Button
                     variant="ghost"
-                    className="w-full flex justify-between items-center p-3 text-left hover:bg-gray-700"
+                    className="w-full flex justify-between items-center px-4 py-3 text-left bg-zinc-800 hover:bg-zinc-700 transition"
                     onClick={() => toggleSession(group.sessionId)}
                   >
                     <div className="flex flex-col">
-                      <span className="text-sm font-medium">Session {group.sessionId.substring(0, 8)}...</span>
-                      <span className="text-xs text-gray-400">{group.firstPromptTime} • {group.prompts.length} messages</span>
+                      <span className="text-sm font-semibold text-white">
+                        Session {group.sessionId.slice(0, 8)}...
+                      </span>
+                      <span className="text-xs text-zinc-400">
+                        {group.firstPromptTime} • {group.prompts.length} messages
+                      </span>
                     </div>
-                    <div className="text-gray-400">
-                      {expandedSession === group.sessionId ? "▲" : "▼"}
-                    </div>
+                    <span className="text-white">{expandedSession === group.sessionId ? "▲" : "▼"}</span>
                   </Button>
-                  
+
                   {expandedSession === group.sessionId && (
                     <div className="p-3 pt-0">
                       {group.documents.length > 0 && (
-                        <div className="mb-2 p-2 bg-gray-700 rounded text-xs">
-                          <div className="font-medium text-gray-300 mb-1">Documents:</div>
-                          {group.documents.map((doc, idx) => (
-                            <div key={idx} className="text-[#A259FF]">{doc}</div>
-                          ))}
+                        <div className="mb-3 p-3 bg-zinc-700 rounded-lg text-sm">
+                          <div className="font-medium text-white mb-1">Documents:</div>
+                          <ul className="list-disc list-inside text-zinc-300">
+                            {group.documents.map((doc, idx) => (
+                              <li key={idx}>{doc}</li>
+                            ))}
+                          </ul>
                         </div>
                       )}
-                      
+
                       <div className="space-y-1">
                         {group.prompts.map((prompt) => (
                           <Button
                             key={prompt.prompt_id}
                             variant="ghost"
-                            className="w-full justify-start text-left px-3 py-2 text-sm hover:bg-gray-700"
+                            className="w-full justify-start text-left px-3 py-2 text-sm hover:bg-zinc-700 text-white transition"
                             onClick={() => handlePromptClick(prompt)}
                           >
-                            <MessageSquare className="h-4 w-4 mr-2 text-gray-400" />
+                            <MessageSquare className="h-4 w-4 mr-2 text-purple-300" />
                             <span className="truncate">{prompt.prompt_text}</span>
                           </Button>
                         ))}
@@ -199,8 +177,8 @@ const ChatHistoryDialog = ({
               ))}
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center py-12 text-gray-400">
-              <History className="h-12 w-12 mb-4" />
+            <div className="flex flex-col items-center justify-center py-12 text-zinc-500">
+              <History className="h-10 w-10 mb-3 text-purple-300" />
               <p>No chat history found</p>
             </div>
           )}

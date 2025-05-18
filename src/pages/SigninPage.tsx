@@ -1,5 +1,4 @@
-
-import React, { useState } from "react";
+import React from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -16,6 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/context/AuthContext";
 import { SigninRequest } from "@/types/api";
+import logo from "./../../public/icons/logo-light1.png";
 
 const formSchema = z.object({
   user_email: z.string().email("Invalid email address"),
@@ -25,7 +25,6 @@ const formSchema = z.object({
 const SigninPage = () => {
   const navigate = useNavigate();
   const { signin } = useAuth();
-  const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -36,31 +35,31 @@ const SigninPage = () => {
   });
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    setIsLoading(true);
     try {
-      // Create a properly typed SigninRequest object
       const signinRequest: SigninRequest = {
         user_email: values.user_email,
         user_pwd: values.user_pwd,
       };
-      
-      await signin(signinRequest);
+
+      const success = await signin(signinRequest);
+      if (success) {
+        navigate("/dashboard");
+      }
     } catch (error) {
       console.error("Login failed:", error);
-    } finally {
-      setIsLoading(false);
     }
   };
 
   return (
-    <div className="h-full flex flex-col items-center justify-center bg-gradient-to-b from-gray-900 to-gray-800 p-4">
-      <div className="w-full max-w-md mx-auto space-y-8">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+      <div className="w-full max-w-md space-y-8">
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-white">Sign In</h1>
-          <p className="text-gray-400 mt-2">Welcome back to SalesAdvisor</p>
+          <img src={logo} alt="logo" className="mx-auto w-80 h-auto" />
         </div>
-
-        <div className="bg-gray-800 rounded-lg shadow-md p-6 border border-gray-700">
+        <div className="bg-white p-8 rounded-lg shadow-md">
+          <p className="text-center mb-4 text-gray-600">
+            Please Sign in to continue
+          </p>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <FormField
@@ -68,16 +67,15 @@ const SigninPage = () => {
                 name="user_email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-white">Email</FormLabel>
+                    <FormLabel>Email</FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="name@example.com"
+                        placeholder="email@example.com"
                         type="email"
-                        className="bg-gray-700 border-gray-600 text-white"
                         {...field}
                       />
                     </FormControl>
-                    <FormMessage className="text-red-400" />
+                    <FormMessage />
                   </FormItem>
                 )}
               />
@@ -87,37 +85,33 @@ const SigninPage = () => {
                 name="user_pwd"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-white">Password</FormLabel>
+                    <FormLabel>Password</FormLabel>
                     <FormControl>
-                      <Input
-                        placeholder="******"
-                        type="password"
-                        className="bg-gray-700 border-gray-600 text-white"
-                        {...field}
-                      />
+                      <Input type="password" placeholder="******" {...field} />
                     </FormControl>
-                    <FormMessage className="text-red-400" />
+                    <FormMessage />
                   </FormItem>
                 )}
               />
 
               <Button
                 type="submit"
-                className="w-full bg-[#A259FF] hover:bg-[#A259FF]/90 text-white py-2"
-                disabled={isLoading}
+                className="w-full"
+                disabled={form.formState.isSubmitting}
               >
-                {isLoading ? "Signing in..." : "Sign In"}
+                {form.formState.isSubmitting ? "Signing in..." : "Sign In"}
               </Button>
             </form>
           </Form>
 
           <div className="mt-6 text-center text-sm">
-            <p className="text-gray-400">
-              Don't have an account?{" "}
-              <Link to="/signup" className="text-[#A259FF] hover:underline">
-                Sign Up
-              </Link>
-            </p>
+            <span className="text-gray-600">Don't have an account?</span>{" "}
+            <Link
+              to="/signup"
+              className="text-primary font-semibold hover:underline"
+            >
+              Create an account
+            </Link>
           </div>
         </div>
       </div>
