@@ -62,8 +62,12 @@ const SignupPage = () => {
     setIsLoading(true);
     try {
       const success = await signup({
-        ...values,
-        conf_password: values.password,
+        user_name: values.user_name,
+        user_email: values.user_email,
+        user_pwd: values.password,
+        user_mobile: values.user_mobile,
+        gender: values.gender as "MALE" | "FEMALE" | "OTHER",
+        is_active: true,
       });
       
       if (success) {
