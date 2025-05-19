@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Send, Upload, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { ChatMessage, LLMSource } from "@/types/api";
-import { v4 as uuidv4 } from "uuid";
 
 interface ChatViewProps {
   workspaceId: number;
@@ -65,7 +64,7 @@ const ChatView = ({ workspaceId, onUploadClick }: ChatViewProps) => {
       <div className="mt-2">
         <button
           onClick={() => toggleSources(messageId)}
-          className="text-sm text-gray-500 hover:text-gray-300 flex items-center"
+          className="text-sm text-gray-500 hover:text-gray-300 dark:hover:text-gray-300 light:hover:text-gray-700 flex items-center"
         >
           <span>{isExpanded ? "Hide Citations" : "Show Citations"}</span>
           <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 ml-1 transition-transform ${isExpanded ? 'rotate-180' : ''}`} viewBox="0 0 20 20" fill="currentColor">
@@ -73,14 +72,14 @@ const ChatView = ({ workspaceId, onUploadClick }: ChatViewProps) => {
           </svg>
         </button>
         {isExpanded && (
-          <div className="mt-2 space-y-1 p-3 border border-gray-600 rounded-md bg-gray-800/50">
+          <div className="mt-2 space-y-1 p-3 border border-gray-600 dark:border-gray-600 light:border-gray-300 rounded-md bg-gray-800/50 dark:bg-gray-800/50 light:bg-gray-100/50">
             {sources.map((source) => (
               <div key={source.source_id} className="mb-2 last:mb-0">
-                <div className="flex items-center text-blue-400">
+                <div className="flex items-center text-blue-400 dark:text-blue-400 light:text-blue-600">
                   <FileText className="h-4 w-4 mr-1" />
                   <span className="text-sm font-medium">{source.file} (page {source.page})</span>
                 </div>
-                <p className="text-sm text-gray-300 mt-1 pl-5">{source.summary}</p>
+                <p className="text-sm text-gray-300 dark:text-gray-300 light:text-gray-700 mt-1 pl-5">{source.summary}</p>
               </div>
             ))}
           </div>
@@ -92,16 +91,16 @@ const ChatView = ({ workspaceId, onUploadClick }: ChatViewProps) => {
   return (
     <div className="flex flex-col h-full">
       {currentSessionDocuments.length > 0 && (
-        <div className="bg-gray-800 border-b border-gray-700 p-3">
+        <div className="bg-gray-800 dark:bg-gray-800 light:bg-gray-100 border-b border-gray-700 dark:border-gray-700 light:border-gray-300 p-3">
           <div className="flex items-center">
             <FileText className="h-4 w-4 mr-2 text-[#A259FF]" />
-            <span className="text-sm font-medium text-gray-300">Current Session Documents:</span>
+            <span className="text-sm font-medium text-gray-300 dark:text-gray-300 light:text-gray-700">Current Session Documents:</span>
           </div>
           <div className="mt-1 flex flex-wrap gap-2">
             {currentSessionDocuments.map((doc, index) => (
               <div 
                 key={index} 
-                className="bg-gray-700 text-xs px-2 py-1 rounded flex items-center"
+                className="bg-gray-700 dark:bg-gray-700 light:bg-gray-200 text-xs px-2 py-1 rounded flex items-center"
               >
                 <span className="text-[#A259FF]">{doc}</span>
               </div>
@@ -110,12 +109,12 @@ const ChatView = ({ workspaceId, onUploadClick }: ChatViewProps) => {
         </div>
       )}
 
-      <div className="flex-grow overflow-y-auto p-4 space-y-6 bg-gray-900">
+      <div className="flex-grow overflow-y-auto p-4 space-y-6 bg-gray-900 dark:bg-gray-900 light:bg-gray-50">
         {filteredMessages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-center text-gray-300">
-            <FileText className="h-16 w-16 mb-4 text-gray-400" />
+          <div className="flex flex-col items-center justify-center h-full text-center text-gray-300 dark:text-gray-300 light:text-gray-600">
+            <FileText className="h-16 w-16 mb-4 text-gray-400 dark:text-gray-400 light:text-gray-500" />
             <h2 className="text-2xl font-semibold mb-2">Start a conversation</h2>
-            <p className="max-w-md text-gray-400">
+            <p className="max-w-md text-gray-400 dark:text-gray-400 light:text-gray-500">
               Ask questions about your documents or upload more files to analyze.
             </p>
           </div>
@@ -130,7 +129,7 @@ const ChatView = ({ workspaceId, onUploadClick }: ChatViewProps) => {
                   className={`max-w-3xl rounded-lg p-4 ${
                     message.type === "user"
                       ? "bg-blue-600 text-white"
-                      : "bg-gray-800 text-white"
+                      : "bg-gray-800 dark:bg-gray-800 light:bg-gray-200 text-white dark:text-white light:text-gray-800"
                   }`}
                 >
                   <div className="whitespace-pre-wrap">{message.content}</div>
@@ -142,11 +141,11 @@ const ChatView = ({ workspaceId, onUploadClick }: ChatViewProps) => {
             {/* 👇 Loading Bot Message Animation */}
             {loading && (
               <div className="flex justify-start">
-                <div className="max-w-3xl rounded-lg p-4 bg-gray-800 text-white">
+                <div className="max-w-3xl rounded-lg p-4 bg-gray-800 dark:bg-gray-800 light:bg-gray-200 text-white dark:text-white light:text-gray-800">
                   <div className="flex space-x-1 animate-pulse">
-                    <div className="w-2 h-2 bg-white rounded-full" />
-                    <div className="w-2 h-2 bg-white rounded-full" />
-                    <div className="w-2 h-2 bg-white rounded-full" />
+                    <div className="w-2 h-2 bg-white dark:bg-white light:bg-gray-800 rounded-full" />
+                    <div className="w-2 h-2 bg-white dark:bg-white light:bg-gray-800 rounded-full" />
+                    <div className="w-2 h-2 bg-white dark:bg-white light:bg-gray-800 rounded-full" />
                   </div>
                 </div>
               </div>
@@ -158,13 +157,13 @@ const ChatView = ({ workspaceId, onUploadClick }: ChatViewProps) => {
       </div>
 
       {/* Input Area */}
-      <div className="border-t border-gray-700 p-4 bg-gray-800">
+      <div className="border-t border-gray-700 dark:border-gray-700 light:border-gray-300 p-4 bg-gray-800 dark:bg-gray-800 light:bg-white">
         <div className="flex items-center gap-3 max-w-5xl mx-auto">
           <Button
             type="button"
             onClick={onUploadClick}
             variant="ghost"
-            className="text-gray-300 hover:text-white hover:bg-gray-700"
+            className="text-gray-300 dark:text-gray-300 light:text-gray-700 hover:text-white dark:hover:text-white light:hover:text-gray-900 hover:bg-gray-700 dark:hover:bg-gray-700 light:hover:bg-gray-200"
             title="Upload Document"
           >
             <Upload className="h-5 w-5" />
@@ -173,7 +172,7 @@ const ChatView = ({ workspaceId, onUploadClick }: ChatViewProps) => {
           <Input
             type="text"
             placeholder="Ask about your documents..."
-            className="flex-1 bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus-visible:ring-[#A259FF]"
+            className="flex-1 bg-gray-700 dark:bg-gray-700 light:bg-gray-100 border-gray-600 dark:border-gray-600 light:border-gray-300 text-white dark:text-white light:text-gray-800 placeholder-gray-400 dark:placeholder-gray-400 light:placeholder-gray-500 focus-visible:ring-[#A259FF]"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyPress={handleKeyPress}

@@ -22,9 +22,9 @@ const MainLayout = ({ children }: MainLayoutProps) => {
         <Sidebar />
 
         <div className="flex-1 flex flex-col overflow-hidden">
-          <header className="sticky top-0 z-20 border-b border-gray-700 p-4 bg-gray-800 shadow-sm flex items-center justify-between">
+          <header className="sticky top-0 z-20 border-b border-gray-700 dark:border-gray-700 light:border-gray-200 p-4 bg-gray-800 dark:bg-gray-800 light:bg-white shadow-sm flex items-center justify-between">
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-              <h1 className="text-2xl font-semibold text-white">
+              <h1 className="text-2xl font-semibold text-white dark:text-white light:text-gray-800">
                 <span className="text-[#A259FF]">SalesAdvisor</span>
               </h1>
             </div>
@@ -32,7 +32,7 @@ const MainLayout = ({ children }: MainLayoutProps) => {
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className="h-8 w-8 px-0"
+                className="h-8 w-8 px-0 text-white dark:text-white light:text-gray-800"
                 onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
               >
                 {theme === "dark" ? (

@@ -1,115 +1,77 @@
 import React, {
   createContext,
-  useContext,
   useState,
   useEffect,
+  useContext,
   ReactNode,
 } from "react";
 import { useNavigate } from "react-router-dom";
-import { User, SigninRequest, SignupRequest, AuthResponse } from "@/types/auth";
 import { toast } from "sonner";
 import { authApi } from "@/services/authApi";
+import {
+  User,
+  SigninRequest,
+  SignupRequest,
+  ApiResponse,
+} from "@/types/api";
 
 interface AuthContextType {
+  token: string | null;
   user: User | null;
+  userRole: number | null;
   isAuthenticated: boolean;
-  loading: boolean;
-  userRole: number;
-  expiryDate: string | null;
-  isAppValid: boolean;
   signin: (credentials: SigninRequest) => Promise<boolean>;
   signup: (userData: SignupRequest) => Promise<boolean>;
-  logout: () => void;
+  signout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
+  const [token, setToken] = useState<string | null>(
+    localStorage.getItem("token")
+  );
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [userRole, setUserRole] = useState<number>(2); // Default to GUEST
-  const [expiryDate, setExpiryDate] = useState<string | null>(null);
-  const [isAppValid, setIsAppValid] = useState<boolean>(true);
+  const [userRole, setUserRole] = useState<number | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(!!token);
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check if user data exists in localStorage
-    const storedUser = localStorage.getItem("user");
-    const storedRole = localStorage.getItem("userRole");
-    const storedExpiryDate = localStorage.getItem("expiryDate");
-    const storedIsAppValid = localStorage.getItem("isAppValid");
-
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-        if (storedRole) setUserRole(parseInt(storedRole, 10));
-        if (storedExpiryDate) setExpiryDate(storedExpiryDate);
-        if (storedIsAppValid) setIsAppValid(storedIsAppValid === "true");
-      } catch (error) {
-        console.error("Failed to parse user data:", error);
-        localStorage.removeItem("user");
-        localStorage.removeItem("userRole");
-        localStorage.removeItem("expiryDate");
-        localStorage.removeItem("isAppValid");
-      }
+    const storedToken = localStorage.getItem("token");
+    if (storedToken) {
+      setToken(storedToken);
+      setIsAuthenticated(true);
     }
-
-    setLoading(false);
   }, []);
 
   const signin = async (credentials: SigninRequest): Promise<boolean> => {
     try {
       const response = await authApi.signin(credentials);
+      if (response.success && response.data) {
+        localStorage.setItem("token", response.data.token);
+        setToken(response.data.token);
+        setUser(response.data);
+        setUserRole(response.data.role_id);
+        setIsAuthenticated(true);
+        console.log("Successfully signed in:", response.data);
 
-      if (response.success && response.data && response.data.length > 0) {
-        if (!response.is_app_valid) {
-          toast.error(
-            "You have consumed the free tier of Prototype, please connect with Product team to enable the features."
-          );
-          return false;
-        }
-
-        const userData = response.data[0];
-
-        // Set user role from response
-        let roleId = 2; // Default to GUEST
-        if (userData.pi_roles && userData.pi_roles.length > 0) {
-          roleId = userData.pi_roles[0].role_id;
-        }
-
-        setUser(userData);
-        setUserRole(roleId);
-        setExpiryDate(response.expiry_date || null);
-        setIsAppValid(response.is_app_valid || false);
-
-        // Store data in localStorage
-        localStorage.setItem("user", JSON.stringify(userData));
-        localStorage.setItem("userRole", roleId.toString());
-        if (response.expiry_date)
-          localStorage.setItem("expiryDate", response.expiry_date);
-        localStorage.setItem(
-          "isAppValid",
-          (response.is_app_valid || false).toString()
-        );
-
-        toast.success("Signed in successfully");
-
-        // Redirect based on user role
-        if (roleId === 1) {
-          // Super Admin redirects to dashboard
-          navigate("/dashboard");
-        } else if (roleId === 2) {
-          // Other users (like Guests) redirect to workspace
-          navigate("/workspace");
+        // Role-based redirects
+        if (response.data.role_id === 1) {
+          // Super Admin - redirect to dashboard
+          navigate('/dashboard');
+        } else if (response.data.role_id === 2) {
+          // Guest - redirect to workspace
+          navigate('/workspace');
+        } else {
+          // Default fallback
+          navigate('/');
         }
         return true;
-      } else {
-        toast.error(response.msg || "Failed to sign in");
-        return false;
       }
+      return false;
     } catch (error) {
-      console.error("Login error:", error);
-      toast.error("Failed to sign in. Please check your credentials.");
+      console.error("Signin error:", error);
+      toast.error("Invalid credentials. Please try again.");
       return false;
     }
   };
@@ -117,57 +79,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signup = async (userData: SignupRequest): Promise<boolean> => {
     try {
       const response = await authApi.signup(userData);
-
-      if (response.success) {
-        toast.success("Account created successfully. Please sign in.");
-        navigate("/signin");
+      if (response.success && response.data) {
+        localStorage.setItem("token", response.data.token);
+        setToken(response.data.token);
+        setUser(response.data);
+        setUserRole(response.data.role_id);
+        setIsAuthenticated(true);
+        console.log("Successfully signed up:", response.data);
+        navigate("/");
         return true;
-      } else {
-        toast.error(response.msg || "Failed to create account");
-        return false;
       }
+      return false;
     } catch (error) {
       console.error("Signup error:", error);
-      toast.error("Failed to create account. Please try again.");
+      toast.error("Failed to sign up. Please try again.");
       return false;
     }
   };
 
-  const logout = () => {
+  const signout = () => {
+    localStorage.removeItem("token");
+    setToken(null);
     setUser(null);
-    setUserRole(2); // Reset to GUEST
-    setExpiryDate(null);
-    setIsAppValid(true);
-    localStorage.removeItem("user");
-    localStorage.removeItem("userRole");
-    localStorage.removeItem("expiryDate");
-    localStorage.removeItem("isAppValid");
-    toast.success("Logged out successfully");
+    setUserRole(null);
+    setIsAuthenticated(false);
     navigate("/signin");
   };
 
-  return (
-    <AuthContext.Provider
-      value={{
-        user,
-        isAuthenticated: !!user,
-        loading,
-        userRole,
-        expiryDate,
-        isAppValid,
-        signin,
-        signup,
-        logout,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
-  );
-}
+  const value: AuthContextType = {
+    token,
+    user,
+    userRole,
+    isAuthenticated,
+    signin,
+    signup,
+    signout,
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+};
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;

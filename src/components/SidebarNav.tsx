@@ -10,13 +10,13 @@ const ROLE_MODULES = {
   "1": {
     modules: [
       { moduleId: 1, name: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
+      { moduleId: 2, name: "Workspaces", icon: ChevronDown, path: "/workspace", collapsible: true },
       { moduleId: 3, name: "User Management", icon: Users, path: "/usermanagement" },
-      { moduleId: 2, name: "Workspaces", icon: ChevronDown, path: "/workspace" },
     ]
   },
   "2": {
     modules: [
-      { moduleId: 2, name: "Workspaces", icon: ChevronDown, path: "/workspace"},
+      { moduleId: 2, name: "Workspaces", icon: ChevronDown, path: "/workspace", collapsible: true },
     ]
   }
 };
@@ -30,10 +30,10 @@ const SidebarNav = () => {
   const modules = ROLE_MODULES[userRole.toString()]?.modules || ROLE_MODULES["2"].modules;
   
   const handleModuleClick = (path: string, collapsible?: boolean) => {
+    navigate(path);
     if (collapsible) {
       setIsWorkspacesOpen(!isWorkspacesOpen);
     }
-    navigate(path);
   };
   
   return (
@@ -49,8 +49,8 @@ const SidebarNav = () => {
               <CollapsibleTrigger asChild>
                 <Button 
                   variant="ghost"
-                  className="w-full justify-between text-gray-200"
-                  onClick={() => navigate(module.path)}
+                  className={`w-full justify-between text-gray-200 dark:text-gray-200 light:text-gray-800 ${location.pathname === module.path ? "bg-gray-700 dark:bg-gray-700 light:bg-gray-200" : ""}`}
+                  onClick={() => handleModuleClick(module.path, true)}
                 >
                   <div className="flex items-center gap-2">
                     {module.icon && <module.icon className="h-4 w-4" />}
@@ -66,7 +66,7 @@ const SidebarNav = () => {
           ) : (
             <Button 
               variant="ghost"
-              className={`w-full justify-start text-gray-200 ${location.pathname === module.path ? "bg-gray-700" : ""}`}
+              className={`w-full justify-start text-gray-200 dark:text-gray-200 light:text-gray-800 ${location.pathname === module.path ? "bg-gray-700 dark:bg-gray-700 light:bg-gray-200" : ""}`}
               onClick={() => handleModuleClick(module.path)}
             >
               <div className="flex items-center gap-2">
