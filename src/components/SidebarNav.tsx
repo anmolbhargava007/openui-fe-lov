@@ -6,18 +6,17 @@ import { LayoutDashboard, Users, ChevronDown } from "lucide-react";
 import { useState } from "react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
-// Define the module mapping
 const ROLE_MODULES = {
   "1": {
     modules: [
       { moduleId: 1, name: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
-      { moduleId: 2, name: "Workspaces", icon: ChevronDown, path: "/workspace", collapsible: true },
       { moduleId: 3, name: "User Management", icon: Users, path: "/usermanagement" },
+      { moduleId: 2, name: "Workspaces", icon: ChevronDown, path: "/workspace" },
     ]
   },
   "2": {
     modules: [
-      { moduleId: 2, name: "Workspaces", icon: ChevronDown, path: "/workspace", collapsible: true },
+      { moduleId: 2, name: "Workspaces", icon: ChevronDown, path: "/workspace"},
     ]
   }
 };

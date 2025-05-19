@@ -1,4 +1,10 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from "react";
 import { useNavigate } from "react-router-dom";
 import { User, SigninRequest, SignupRequest, AuthResponse } from "@/types/auth";
 import { toast } from "sonner";
@@ -25,14 +31,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [expiryDate, setExpiryDate] = useState<string | null>(null);
   const [isAppValid, setIsAppValid] = useState<boolean>(true);
   const navigate = useNavigate();
-  
+
   useEffect(() => {
     // Check if user data exists in localStorage
     const storedUser = localStorage.getItem("user");
     const storedRole = localStorage.getItem("userRole");
     const storedExpiryDate = localStorage.getItem("expiryDate");
     const storedIsAppValid = localStorage.getItem("isAppValid");
-    
+
     if (storedUser) {
       try {
         setUser(JSON.parse(storedUser));
@@ -47,51 +53,55 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.removeItem("isAppValid");
       }
     }
-    
+
     setLoading(false);
   }, []);
 
   const signin = async (credentials: SigninRequest): Promise<boolean> => {
     try {
       const response = await authApi.signin(credentials);
-      
+
       if (response.success && response.data && response.data.length > 0) {
-        // Check if app is valid before proceeding
         if (!response.is_app_valid) {
-          toast.error("You have consumed the free tier of Prototype, please connect with Product team to enable the features.");
+          toast.error(
+            "You have consumed the free tier of Prototype, please connect with Product team to enable the features."
+          );
           return false;
         }
-        
+
         const userData = response.data[0];
-        
+
         // Set user role from response
         let roleId = 2; // Default to GUEST
         if (userData.pi_roles && userData.pi_roles.length > 0) {
           roleId = userData.pi_roles[0].role_id;
         }
-        
+
         setUser(userData);
         setUserRole(roleId);
         setExpiryDate(response.expiry_date || null);
         setIsAppValid(response.is_app_valid || false);
-        
+
         // Store data in localStorage
         localStorage.setItem("user", JSON.stringify(userData));
         localStorage.setItem("userRole", roleId.toString());
-        if (response.expiry_date) localStorage.setItem("expiryDate", response.expiry_date);
-        localStorage.setItem("isAppValid", (response.is_app_valid || false).toString());
-        
+        if (response.expiry_date)
+          localStorage.setItem("expiryDate", response.expiry_date);
+        localStorage.setItem(
+          "isAppValid",
+          (response.is_app_valid || false).toString()
+        );
+
         toast.success("Signed in successfully");
-        
+
         // Redirect based on user role
         if (roleId === 1) {
           // Super Admin redirects to dashboard
           navigate("/dashboard");
-        } else {
+        } else if (roleId === 2) {
           // Other users (like Guests) redirect to workspace
           navigate("/workspace");
         }
-        
         return true;
       } else {
         toast.error(response.msg || "Failed to sign in");
@@ -107,7 +117,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signup = async (userData: SignupRequest): Promise<boolean> => {
     try {
       const response = await authApi.signup(userData);
-      
+
       if (response.success) {
         toast.success("Account created successfully. Please sign in.");
         navigate("/signin");
@@ -137,17 +147,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider 
-      value={{ 
-        user, 
-        isAuthenticated: !!user, 
-        loading, 
+    <AuthContext.Provider
+      value={{
+        user,
+        isAuthenticated: !!user,
+        loading,
         userRole,
         expiryDate,
         isAppValid,
-        signin, 
-        signup, 
-        logout 
+        signin,
+        signup,
+        logout,
       }}
     >
       {children}
