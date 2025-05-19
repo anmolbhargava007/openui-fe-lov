@@ -22,16 +22,6 @@ const WorkspaceView = () => {
             Select a workspace or create a new one to get started with your
             documents.
           </p>
-          <Button
-            onClick={() =>
-              document
-                .querySelector('[data-sidebar="trigger"]')
-                ?.dispatchEvent(new MouseEvent("click"))
-            }
-            className="bg-[#A259FF] hover:bg-[#A259FF]/90 text-white"
-          >
-            View Workspaces
-          </Button>
         </div>
       </div>
     );
