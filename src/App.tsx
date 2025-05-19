@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -8,6 +9,8 @@ import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 import SigninPage from "./pages/SigninPage";
 import SignupPage from "./pages/SignupPage";
+import DashboardPage from "./pages/admin/DashboardPage";
+import UsersPage from "./pages/admin/UsersPage";
 import { AuthProvider } from "./context/AuthContext";
 import { AuthLayout } from "./components/AuthLayout";
 
@@ -30,6 +33,8 @@ const App = () => (
             {/* Protected routes with header */}
             <Route element={<AuthLayout protected withHeader />}>
               <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/admin/dashboard" element={<DashboardPage />} />
+              <Route path="/admin/users" element={<UsersPage />} />
             </Route>
 
             {/* Index route */}

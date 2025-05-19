@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import { WorkspaceWithDocuments } from "@/types/api";
@@ -25,8 +26,11 @@ import WorkspaceDialog from "./WorkspaceDialog";
 import UploadModal from "./UploadModal";
 import ChatHistoryDialog from "./ChatHistoryDialog";
 import logoWhite from "./../../public/icons/logo-white.png";
+import SidebarNav from "./SidebarNav";
+import { useAuth } from "@/context/AuthContext";
 
 const Sidebar = () => {
+  const { userRole } = useAuth();
   const {
     workspaces,
     selectedWorkspace,
@@ -93,6 +97,14 @@ const Sidebar = () => {
       <div className="flex justify-center">
         <img src={logoWhite} alt="Logo" className="w-64 h-[85px] mx-auto p-1" />
       </div>
+
+      {/* Only render SidebarNav if user is SUPER ADMIN (role_id === 1) */}
+      {userRole === 1 && (
+        <div className="border-b border-gray-700 pb-2">
+          <SidebarNav />
+        </div>
+      )}
+      
       <div className="px-3 py-3">
         <Button
           onClick={() => setCreateDialogOpen(true)}

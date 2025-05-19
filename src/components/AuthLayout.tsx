@@ -1,3 +1,4 @@
+
 import { useAuth } from "@/context/AuthContext";
 import { Navigate, Outlet } from "react-router-dom";
 import Header from "./Header";
@@ -28,6 +29,7 @@ export const AuthLayout = ({ protected: isProtected = false, withHeader = false 
 
   return (
     <>
+      {withHeader && <Header />}
       <Outlet />
     </>
   );

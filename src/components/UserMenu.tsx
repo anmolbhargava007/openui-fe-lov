@@ -1,3 +1,4 @@
+
 import { LogOut, Settings } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import {
@@ -11,9 +12,9 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 const UserMenu = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, expiryDate } = useAuth();
 
-  // Don’t render if user is not logged in
+  // Don't render if user is not logged in
   if (!user) return null;
 
   // Safely get initials from name
@@ -52,6 +53,14 @@ const UserMenu = () => {
           <Settings className="mr-2 h-4 w-4" />
           <span>Settings</span>
         </DropdownMenuItem>
+        {expiryDate && (
+          <>
+            <DropdownMenuSeparator />
+            <div className="px-2 py-1.5 text-sm text-muted-foreground">
+              <span>Expires on: {expiryDate}</span>
+            </div>
+          </>
+        )}
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={logout}>
           <LogOut className="mr-2 h-4 w-4" />
