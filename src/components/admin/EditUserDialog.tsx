@@ -73,6 +73,8 @@ const EditUserDialog = ({ isOpen, onClose, user, onUserUpdated }: EditUserDialog
 
   const onSubmit = async (values: FormValues) => {
     try {
+      // Since values is already of type FormValues which matches UserForManagement, 
+      // no need for type casting or additional checks
       await authApi.updateUser(values);
       toast.success("User updated successfully");
       onUserUpdated();

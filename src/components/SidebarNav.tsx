@@ -2,13 +2,13 @@
 import { useAuth } from "@/context/AuthContext";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Dashboard, Users } from "lucide-react";
+import { LayoutDashboard, Users } from "lucide-react";
 
 // Define the module mapping
 const ROLE_MODULES = {
   "1": {
     modules: [
-      { moduleId: 1, name: "Dashboard", icon: Dashboard, path: "/admin/dashboard" },
+      { moduleId: 1, name: "Dashboard", icon: LayoutDashboard, path: "/admin/dashboard" },
       { moduleId: 2, name: "Workspaces", icon: null, path: "/dashboard" },
       { moduleId: 3, name: "User Management", icon: Users, path: "/admin/users" },
     ]
