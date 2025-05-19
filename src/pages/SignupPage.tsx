@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { z } from "zod";
@@ -22,6 +23,7 @@ import {
 } from "@/components/ui/select";
 import { useAuth } from "@/context/AuthContext";
 import { SignupRequest } from "@/types/api";
+import logo from "./../../public/icons/logo-light.png";
 
 const formSchema = z.object({
   user_name: z.string().min(2, "Name must be at least 2 characters"),
@@ -69,11 +71,12 @@ const SignupPage = () => {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
-          <h1 className="text-3xl font-bold">Create an account</h1>
-          <p className="mt-2 text-gray-600">Sign up to get started</p>
+          <img src={logo} alt="logo" />
         </div>
-
+        
         <div className="bg-white p-8 rounded-lg shadow-md">
+          <p className="mt-1 text-center mb-3 text-gray-600">Create an account to get started</p>
+          
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
               <FormField

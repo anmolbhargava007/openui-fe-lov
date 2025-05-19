@@ -1,70 +1,79 @@
 
-import { LogOut, Settings } from "lucide-react";
-import { useAuth } from "@/context/AuthContext";
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+} from '@/components/ui/dropdown-menu';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { useAuth } from '@/context/AuthContext';
+import { LogOut, User, Settings } from 'lucide-react';
 
 const UserMenu = () => {
   const { user, logout, expiryDate } = useAuth();
+  const navigate = useNavigate();
 
-  // Don't render if user is not logged in
-  if (!user) return null;
+  const handleLogout = () => {
+    logout();
+  };
 
-  // Safely get initials from name
-  const getInitials = (name?: string) => {
-    if (!name || typeof name !== "string") return "??";
+  const getInitials = (name: string) => {
     return name
-      .split(" ")
-      .map((part) => part[0])
-      .join("")
+      .split(' ')
+      .map(part => part.charAt(0))
+      .join('')
       .toUpperCase()
       .substring(0, 2);
   };
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-          <Avatar>
-            <AvatarFallback className="bg-gray-600 text-white">
-              {getInitials(user.user_name)}
-            </AvatarFallback>
-          </Avatar>
-        </Button>
+      <DropdownMenuTrigger className="focus:outline-none">
+        <Avatar className="h-9 w-9 cursor-pointer">
+          <AvatarFallback className="bg-[#A259FF] text-white">
+            {user?.user_name ? getInitials(user.user_name) : 'U'}
+          </AvatarFallback>
+        </Avatar>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56" align="end">
-        <div className="flex items-center justify-start gap-2 p-2">
-          <div className="flex flex-col space-y-1 leading-none">
-            <p className="font-medium">{user?.user_name || "Unknown User"}</p>
-            <p className="text-sm text-muted-foreground">
-              {user?.user_email || "No email"}
-            </p>
+      
+      <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuLabel>
+          <div className="flex flex-col space-y-1">
+            <p className="text-sm font-medium leading-none">{user?.user_name}</p>
+            <p className="text-xs leading-none text-muted-foreground">{user?.user_email}</p>
           </div>
-        </div>
+        </DropdownMenuLabel>
+        
         <DropdownMenuSeparator />
-        <DropdownMenuItem>
+        
+        <DropdownMenuItem onClick={() => navigate('/profile')}>
+          <User className="mr-2 h-4 w-4" />
+          <span>Profile</span>
+        </DropdownMenuItem>
+        
+        <DropdownMenuItem onClick={() => navigate('/settings')}>
           <Settings className="mr-2 h-4 w-4" />
           <span>Settings</span>
         </DropdownMenuItem>
+        
         {expiryDate && (
           <>
             <DropdownMenuSeparator />
-            <div className="px-2 py-1.5 text-sm text-muted-foreground">
-              <span>Expires on: {expiryDate}</span>
-            </div>
+            <DropdownMenuLabel className="flex items-center">
+              <span className="text-xs">Expiry Date: {expiryDate}</span>
+            </DropdownMenuLabel>
           </>
         )}
+        
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={logout}>
+        
+        <DropdownMenuItem onClick={handleLogout}>
           <LogOut className="mr-2 h-4 w-4" />
-          <span>Log out</span>
+          <span>Logout</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

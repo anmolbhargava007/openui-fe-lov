@@ -1,10 +1,13 @@
 
-import React from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+import React, { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Form,
   FormControl,
@@ -14,16 +17,20 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { 
+import { Button } from "@/components/ui/button";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { UserForManagement } from "@/types/auth";
+import { authApi } from "@/services/authApi";
+import { toast } from "sonner";
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue
+  SelectValue,
 } from "@/components/ui/select";
-import { UserForManagement } from "@/types/auth";
-import { authApi } from "@/services/authApi";
-import { toast } from "sonner";
 
 interface EditUserDialogProps {
   isOpen: boolean;
@@ -32,64 +39,88 @@ interface EditUserDialogProps {
   onUserUpdated: () => void;
 }
 
-const userSchema = z.object({
-  user_id: z.number(),
-  user_name: z.string().min(2, { message: "Name must be at least 2 characters" }),
-  user_email: z.string().email({ message: "Please enter a valid email address" }),
-  user_mobile: z.string().min(10, { message: "Mobile number must be at least 10 digits" }),
+const formSchema = z.object({
+  user_name: z.string().min(2, "Name must be at least 2 characters"),
+  user_email: z.string().email("Invalid email address"),
+  user_mobile: z.string().min(10, "Mobile number must be at least 10 digits"),
   gender: z.enum(["MALE", "FEMALE", "OTHER"], {
     required_error: "Please select a gender",
   }),
   is_active: z.boolean(),
 });
 
-type FormValues = z.infer<typeof userSchema>;
+const EditUserDialog = ({
+  isOpen,
+  onClose,
+  user,
+  onUserUpdated,
+}: EditUserDialogProps) => {
+  const [isLoading, setIsLoading] = useState(false);
 
-const EditUserDialog = ({ isOpen, onClose, user, onUserUpdated }: EditUserDialogProps) => {
-  const form = useForm<FormValues>({
-    resolver: zodResolver(userSchema),
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
     defaultValues: {
-      user_id: user?.user_id || 0,
       user_name: user?.user_name || "",
       user_email: user?.user_email || "",
       user_mobile: user?.user_mobile || "",
-      gender: user?.gender || "MALE",
+      gender: (user?.gender as "MALE" | "FEMALE" | "OTHER") || "MALE",
       is_active: user?.is_active ?? true,
-    }
+    },
   });
 
   React.useEffect(() => {
     if (user) {
       form.reset({
-        user_id: user.user_id,
         user_name: user.user_name,
         user_email: user.user_email,
         user_mobile: user.user_mobile,
-        gender: user.gender,
+        gender: user.gender as "MALE" | "FEMALE" | "OTHER",
         is_active: user.is_active,
       });
     }
   }, [user, form]);
 
-  const onSubmit = async (values: FormValues) => {
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    if (!user || !user.user_id) return;
+    
+    setIsLoading(true);
     try {
-      // Since values is already of type FormValues which matches UserForManagement, 
-      // no need for type casting or additional checks
-      await authApi.updateUser(values);
-      toast.success("User updated successfully");
-      onUserUpdated();
+      const userData: UserForManagement = {
+        user_id: user.user_id, // Ensure user_id is provided and not optional
+        user_name: values.user_name,
+        user_email: values.user_email,
+        user_mobile: values.user_mobile,
+        gender: values.gender,
+        is_active: values.is_active,
+      };
+      
+      const response = await authApi.updateUser(userData);
+      
+      if (response.success) {
+        toast.success("User updated successfully");
+        onUserUpdated();
+        onClose();
+      } else {
+        toast.error(response.msg || "Failed to update user");
+      }
     } catch (error) {
-      console.error("Error updating user:", error);
+      console.error("Update user error:", error);
       toast.error("Failed to update user");
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[450px]">
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Edit User</DialogTitle>
+          <DialogDescription>
+            Make changes to the user's information here.
+          </DialogDescription>
         </DialogHeader>
+
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
@@ -105,7 +136,7 @@ const EditUserDialog = ({ isOpen, onClose, user, onUserUpdated }: EditUserDialog
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="user_email"
@@ -119,13 +150,13 @@ const EditUserDialog = ({ isOpen, onClose, user, onUserUpdated }: EditUserDialog
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="user_mobile"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Mobile Number</FormLabel>
+                  <FormLabel>Mobile</FormLabel>
                   <FormControl>
                     <Input {...field} />
                   </FormControl>
@@ -133,14 +164,17 @@ const EditUserDialog = ({ isOpen, onClose, user, onUserUpdated }: EditUserDialog
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="gender"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Gender</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select gender" />
@@ -156,30 +190,32 @@ const EditUserDialog = ({ isOpen, onClose, user, onUserUpdated }: EditUserDialog
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="is_active"
               render={({ field }) => (
-                <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md">
+                <FormItem className="flex flex-row items-center justify-between rounded-md border p-3">
+                  <div className="space-y-0.5">
+                    <FormLabel>Active Status</FormLabel>
+                  </div>
                   <FormControl>
                     <input
                       type="checkbox"
                       checked={field.value}
                       onChange={field.onChange}
-                      className="h-4 w-4"
+                      className="accent-primary h-5 w-5"
                     />
                   </FormControl>
-                  <FormLabel className="font-normal">Active</FormLabel>
+                  <FormMessage />
                 </FormItem>
               )}
             />
-            
+
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={onClose}>
-                Cancel
+              <Button type="submit" disabled={isLoading}>
+                {isLoading ? "Saving..." : "Save changes"}
               </Button>
-              <Button type="submit">Save changes</Button>
             </DialogFooter>
           </form>
         </Form>

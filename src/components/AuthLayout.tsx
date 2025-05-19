@@ -7,7 +7,7 @@ interface AuthLayoutProps {
 }
 
 export const AuthLayout = ({ protected: isProtected = false, withHeader = false }: AuthLayoutProps) => {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, userRole } = useAuth();
 
   if (loading) {
     return (
@@ -22,7 +22,8 @@ export const AuthLayout = ({ protected: isProtected = false, withHeader = false 
   }
 
   if (!isProtected && isAuthenticated) {
-    return <Navigate to="/dashboard" />;
+    // Redirect based on user role
+    return <Navigate to={userRole === 1 ? "/dashboard" : "/workspace"} />;
   }
 
   return (

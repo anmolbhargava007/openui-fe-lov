@@ -8,14 +8,14 @@ import { LayoutDashboard, Users } from "lucide-react";
 const ROLE_MODULES = {
   "1": {
     modules: [
-      { moduleId: 1, name: "Dashboard", icon: LayoutDashboard, path: "/admin/dashboard" },
-      { moduleId: 2, name: "Workspaces", icon: null, path: "/dashboard" },
-      { moduleId: 3, name: "User Management", icon: Users, path: "/admin/users" },
+      { moduleId: 1, name: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
+      { moduleId: 2, name: "Workspaces", icon: null, path: "/workspace" },
+      { moduleId: 3, name: "User Management", icon: Users, path: "/usermanagement" },
     ]
   },
   "2": {
     modules: [
-      { moduleId: 2, name: "Workspaces", icon: null, path: "/dashboard" },
+      { moduleId: 2, name: "Workspaces", icon: null, path: "/workspace" },
     ]
   }
 };
