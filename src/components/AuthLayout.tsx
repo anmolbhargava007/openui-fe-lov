@@ -4,7 +4,7 @@ import Header from "./Header";
 
 interface AuthLayoutProps {
   protected?: boolean;
-  withHeader?: boolean;  // new prop to control header visibility
+  withHeader?: boolean;
 }
 
 export const AuthLayout = ({ protected: isProtected = false, withHeader = false }: AuthLayoutProps) => {
@@ -28,7 +28,6 @@ export const AuthLayout = ({ protected: isProtected = false, withHeader = false 
 
   return (
     <>
-      {/* {isProtected && withHeader && <Header />} */}
       <Outlet />
     </>
   );
