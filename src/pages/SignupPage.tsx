@@ -1,9 +1,10 @@
 
-import React, { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import { z } from "zod";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { useNavigate, Link } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -21,161 +22,192 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useAuth } from "@/context/AuthContext";
-import { SignupRequest } from "@/types/api";
-import logo from "./../../public/icons/logo-light.png";
+import logoWhite from "./../../public/icons/logo-white.png";
 
 const formSchema = z.object({
-  user_name: z.string().min(2, "Name must be at least 2 characters"),
-  user_email: z.string().email("Invalid email address"),
-  user_pwd: z.string().min(6, "Password must be at least 6 characters"),
-  user_mobile: z.string().min(10, "Mobile number must be at least 10 digits"),
-  gender: z.enum(["MALE", "FEMALE", "OTHER"], {
-    required_error: "Please select a gender",
+  user_name: z.string().min(2, {
+    message: "Name must be at least 2 characters.",
+  }),
+  user_email: z.string().email({
+    message: "Please enter a valid email address.",
+  }),
+  gender: z.string().min(1, {
+    message: "Please select a gender.",
+  }),
+  user_mobile: z.string().min(10, {
+    message: "Please enter a valid phone number.",
+  }),
+  password: z.string().min(6, {
+    message: "Password must be at least 6 characters.",
   }),
 });
 
 const SignupPage = () => {
-  const navigate = useNavigate();
-  const { signup } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const { signup } = useAuth();
+  const navigate = useNavigate();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       user_name: "",
       user_email: "",
-      user_pwd: "",
+      gender: "",
       user_mobile: "",
-      gender: "MALE",
+      password: "",
     },
   });
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);
     try {
-      const signupRequest: SignupRequest = {
-        ...(values as Omit<SignupRequest, "is_active">),
-        is_active: true,
-      };
-      await signup(signupRequest);
-      navigate("/signin");
-    } catch (error) {
-      console.error("Signup failed:", error);
+      const success = await signup({
+        ...values,
+        conf_password: values.password,
+      });
+      
+      if (success) {
+        navigate("/signin");
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <div className="w-full max-w-md space-y-8">
-        <div className="text-center">
-          <img src={logo} alt="logo" />
+    <div className="h-screen flex items-center justify-center bg-gradient-to-r from-gray-900 to-gray-800">
+      <div className="w-full max-w-md space-y-8 p-8 bg-gray-800 rounded-lg shadow-xl border border-gray-700">
+        <div className="flex justify-center">
+          <img src={logoWhite} alt="Logo" className="w-64 h-auto mb-6" />
         </div>
         
-        <div className="bg-white p-8 rounded-lg shadow-md">
-          <p className="mt-1 text-center mb-3 text-gray-600">Create an account to get started</p>
-          
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
-              <FormField
-                control={form.control}
-                name="user_name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="John Doe" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="user_email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <Input placeholder="email@example.com" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="user_pwd"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Password</FormLabel>
-                    <FormControl>
-                      <Input type="password" placeholder="******" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="user_mobile"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Mobile Number</FormLabel>
-                    <FormControl>
-                      <Input placeholder="9876543210" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
+        <h1 className="text-2xl font-bold tracking-tight text-white text-center">
+          Create an account
+        </h1>
+        <p className="text-sm text-gray-400 text-center">
+          Enter your details to get started with SalesAdvisor
+        </p>
+        
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <FormField
+              control={form.control}
+              name="user_name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-gray-300">Name</FormLabel>
+                  <FormControl>
+                    <Input 
+                      placeholder="John Doe" 
+                      {...field}
+                      className="bg-gray-700 text-white border-gray-600 focus-visible:ring-[#A259FF]" 
+                    />
+                  </FormControl>
+                  <FormMessage className="text-red-400" />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="user_email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-gray-300">Email</FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="email" 
+                      placeholder="john@example.com" 
+                      {...field} 
+                      className="bg-gray-700 text-white border-gray-600 focus-visible:ring-[#A259FF]"
+                    />
+                  </FormControl>
+                  <FormMessage className="text-red-400" />
+                </FormItem>
+              )}
+            />
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="gender"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Gender</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
+                    <FormLabel className="text-gray-300">Gender</FormLabel>
+                    <Select 
+                      onValueChange={field.onChange} 
                       defaultValue={field.value}
                     >
                       <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select gender" />
+                        <SelectTrigger className="bg-gray-700 text-white border-gray-600 focus:ring-[#A259FF]">
+                          <SelectValue placeholder="Select" />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent>
+                      <SelectContent className="bg-gray-700 text-white border-gray-600">
                         <SelectItem value="MALE">Male</SelectItem>
                         <SelectItem value="FEMALE">Female</SelectItem>
                         <SelectItem value="OTHER">Other</SelectItem>
                       </SelectContent>
                     </Select>
-                    <FormMessage />
+                    <FormMessage className="text-red-400" />
                   </FormItem>
                 )}
               />
-
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Creating account..." : "Sign Up"}
-              </Button>
-            </form>
-          </Form>
-
-          <div className="mt-6 text-center text-sm">
-            <span className="text-gray-600">Already have an account?</span>{" "}
-            <Link
-              to="/signin"
-              className="text-primary font-semibold hover:underline"
+              
+              <FormField
+                control={form.control}
+                name="user_mobile"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-gray-300">Phone Number</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="123-456-7890" 
+                        {...field} 
+                        className="bg-gray-700 text-white border-gray-600 focus-visible:ring-[#A259FF]"
+                      />
+                    </FormControl>
+                    <FormMessage className="text-red-400" />
+                  </FormItem>
+                )}
+              />
+            </div>
+            
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-gray-300">Password</FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="password" 
+                      {...field} 
+                      className="bg-gray-700 text-white border-gray-600 focus-visible:ring-[#A259FF]"
+                    />
+                  </FormControl>
+                  <FormMessage className="text-red-400" />
+                </FormItem>
+              )}
+            />
+            
+            <Button 
+              type="submit" 
+              className="w-full bg-[#A259FF] hover:bg-[#A259FF]/90" 
+              disabled={isLoading}
             >
+              {isLoading ? "Creating account..." : "Create account"}
+            </Button>
+          </form>
+        </Form>
+        
+        <div className="text-center mt-4">
+          <p className="text-sm text-gray-400">
+            Already have an account?{" "}
+            <Link to="/signin" className="text-[#A259FF] hover:underline">
               Sign in
             </Link>
-          </div>
+          </p>
         </div>
       </div>
     </div>

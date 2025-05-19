@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { User, SigninRequest, SignupRequest, AuthResponse } from "@/types/auth";
@@ -83,7 +82,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.setItem("isAppValid", (response.is_app_valid || false).toString());
         
         toast.success("Signed in successfully");
-        navigate("/dashboard");
+        
+        // Redirect based on user role
+        if (roleId === 1) {
+          // Super Admin redirects to dashboard
+          navigate("/dashboard");
+        } else {
+          // Other users (like Guests) redirect to workspace
+          navigate("/workspace");
+        }
+        
         return true;
       } else {
         toast.error(response.msg || "Failed to sign in");
