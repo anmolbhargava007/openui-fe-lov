@@ -12,9 +12,10 @@ interface WorkspaceDialogProps {
   isOpen: boolean;
   onClose: () => void;
   workspace: WorkspaceWithDocuments | null;
+  mode?: string;
 }
 
-const WorkspaceDialog = ({ isOpen, onClose, workspace }: WorkspaceDialogProps) => {
+const WorkspaceDialog = ({ isOpen, onClose, workspace, mode = 'create' }: WorkspaceDialogProps) => {
   const { user } = useAuth();
   const { createWorkspace, updateWorkspace } = useWorkspace();
   const [workspaceName, setWorkspaceName] = useState('');

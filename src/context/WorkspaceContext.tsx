@@ -1,4 +1,3 @@
-
 import React, {
   createContext,
   useState,
@@ -309,6 +308,18 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
         for (const workspace of transformed) {
           try {
             if (workspace.ws_id) {
+              // Ensure each workspace has a session ID
+              if (!sessionIds[workspace.ws_id]) {
+                // Try to load session ID from localStorage first
+                const storedSessionId = localStorage.getItem(`session_${workspace.ws_id}`);
+                if (storedSessionId) {
+                  setSessionIds(prev => ({
+                    ...prev,
+                    [workspace.ws_id!]: storedSessionId
+                  }));
+                }
+              }
+              
               const docs = await documentApi.getAll(workspace.ws_id);
               workspace.documents = docs;
               workspace.fileCount = docs.length;
@@ -362,10 +373,29 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
         is_active: true,
       };
 
+      // Create workspace in database
       const response = await workspaceApi.create(newWorkspace);
-      if (response.success) {
-        toast.success("Workspace created successfully");
-        await refreshWorkspaces();
+      if (response.success && response.data && response.data.ws_id) {
+        // Start a new session immediately
+        const sessionResponse = await llmApi.startSession();
+        
+        if (sessionResponse.success && sessionResponse.session_id) {
+          // Save the session ID for this workspace
+          const workspaceId = response.data.ws_id;
+          setSessionIds(prev => ({
+            ...prev,
+            [workspaceId]: sessionResponse.session_id!
+          }));
+          
+          // Store session ID in localStorage for persistence
+          localStorage.setItem(`session_${workspaceId}`, sessionResponse.session_id);
+          
+          toast.success("Workspace created successfully");
+          await refreshWorkspaces();
+        } else {
+          toast.error("Created workspace but failed to initialize session");
+          await refreshWorkspaces();
+        }
       } else {
         toast.error("Failed to create workspace");
       }
@@ -464,34 +494,48 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
         return false;
       }
 
-      // Upload to LLM service to get session ID
+      // Get session ID for this workspace
+      let sessionId = sessionIds[selectedWorkspace.ws_id!];
+      
+      // If no session ID exists, create one
+      if (!sessionId) {
+        const sessionResponse = await llmApi.startSession();
+        if (sessionResponse.success && sessionResponse.session_id) {
+          sessionId = sessionResponse.session_id;
+          
+          // Save the session ID
+          setSessionIds(prev => ({
+            ...prev,
+            [selectedWorkspace.ws_id!]: sessionId
+          }));
+          
+          // Store in localStorage
+          localStorage.setItem(`session_${selectedWorkspace.ws_id}`, sessionId);
+        } else {
+          toast.error("Failed to initialize session");
+          return false;
+        }
+      }
+
+      // Upload to LLM service with session ID
       if (selectedWorkspace.ws_id) {
         try {
-          const result = await llmApi.uploadDocument(file, selectedWorkspace.ws_id);
+          const result = await llmApi.uploadDocument(file, sessionId);
           
-          if (result.success && result.session_id) {
-            // Save the session ID for this workspace
-            setSessionIds(prev => ({
-              ...prev,
-              [selectedWorkspace.ws_id!]: result.session_id!
-            }));
-            
+          if (result.success) {
             // Update session documents
-            setSessionDocuments(prev => ({
-              ...prev,
-              [selectedWorkspace.ws_id!]: [file.name]
-            }));
+            setSessionDocuments(prev => {
+              const existingDocs = prev[selectedWorkspace.ws_id!] || [];
+              return {
+                ...prev,
+                [selectedWorkspace.ws_id!]: [...existingDocs, file.name]
+              };
+            });
             
             // Update current session documents
-            setCurrentSessionDocuments([file.name]);
+            setCurrentSessionDocuments(prev => [...prev, file.name]);
             
-            console.log(`Session ID for workspace ${selectedWorkspace.ws_id}: ${result.session_id}`);
-            
-            // Clear chat messages for this workspace to start fresh
-            setChatMessages(prev => ({
-              ...prev,
-              [selectedWorkspace.ws_id!]: []
-            }));
+            console.log(`Document uploaded to session ${sessionId} for workspace ${selectedWorkspace.ws_id}`);
           } else {
             console.error("Failed to upload to LLM API");
           }
@@ -500,7 +544,7 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
         }
       }
 
-      // Continue with the regular document upload
+      // Continue with the regular document upload to our database
       const response = await documentApi.upload(file, {
         ...selectedWorkspace,
         user_id: user?.user_id || 1,
@@ -576,7 +620,7 @@ export const WorkspaceProvider = ({ children }: { children: ReactNode }) => {
       });
 
       // Get session ID for this workspace
-      const sessionId = sessionIds[workspaceId];
+      let sessionId = sessionIds[workspaceId];
       
       if (!sessionId) {
         throw new Error("No session found. Please upload a document first.");

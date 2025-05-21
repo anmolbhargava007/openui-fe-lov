@@ -1,219 +1,132 @@
 
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { useNavigate, Link } from "react-router-dom";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { useAuth } from "@/context/AuthContext";
-import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import logoWhite from "./../../public/icons/logo-white.png";
-
-const formSchema = z.object({
-  user_name: z.string().min(2, {
-    message: "Name must be at least 2 characters.",
-  }),
-  user_email: z.string().email({
-    message: "Please enter a valid email address.",
-  }),
-  gender: z.string().min(1, {
-    message: "Please select a gender.",
-  }),
-  user_mobile: z.string().min(10, {
-    message: "Please enter a valid phone number.",
-  }),
-  password: z.string().min(6, {
-    message: "Password must be at least 6 characters.",
-  }),
-});
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useAuth } from '@/context/AuthContext';
 
 const SignupPage = () => {
-  const [isLoading, setIsLoading] = useState(false);
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [mobile, setMobile] = useState('');
+  const [gender, setGender] = useState<'MALE' | 'FEMALE' | 'OTHER'>('MALE');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { signup } = useAuth();
-  const navigate = useNavigate();
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      user_name: "",
-      user_email: "",
-      gender: "",
-      user_mobile: "",
-      password: "",
-    },
-  });
-
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    setIsLoading(true);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!name || !email || !password || !mobile) {
+      return;
+    }
+    
     try {
-      const success = await signup({
-        user_name: values.user_name,
-        user_email: values.user_email,
-        user_pwd: values.password,
-        user_mobile: values.user_mobile,
-        gender: values.gender as "MALE" | "FEMALE" | "OTHER",
-        is_active: true,
-      });
+      setIsSubmitting(true);
       
-      if (success) {
-        navigate("/signin");
-      }
+      await signup({
+        user_name: name, 
+        user_email: email,
+        user_pwd: password,
+        user_mobile: mobile,
+        gender,
+        is_active: true
+      });
+    } catch (error) {
+      console.error('Signup error:', error);
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="h-screen flex items-center justify-center bg-gradient-to-r from-gray-900 to-gray-800">
-      <div className="w-full max-w-md space-y-8 p-8 bg-gray-800 rounded-lg shadow-xl border border-gray-700">
-        <div className="flex justify-center">
-          <img src={logoWhite} alt="Logo" className="w-64 h-auto mb-6" />
-        </div>
-        
-        <h1 className="text-2xl font-bold tracking-tight text-white text-center">
-          Create an account
-        </h1>
-        <p className="text-sm text-gray-400 text-center">
-          Enter your details to get started with SalesAdvisor
-        </p>
-        
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <FormField
-              control={form.control}
-              name="user_name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-gray-300">Name</FormLabel>
-                  <FormControl>
-                    <Input 
-                      placeholder="John Doe" 
-                      {...field}
-                      className="bg-gray-700 text-white border-gray-600 focus-visible:ring-[#A259FF]" 
-                    />
-                  </FormControl>
-                  <FormMessage className="text-red-400" />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="user_email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-gray-300">Email</FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="email" 
-                      placeholder="john@example.com" 
-                      {...field} 
-                      className="bg-gray-700 text-white border-gray-600 focus-visible:ring-[#A259FF]"
-                    />
-                  </FormControl>
-                  <FormMessage className="text-red-400" />
-                </FormItem>
-              )}
-            />
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="gender"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-gray-300">Gender</FormLabel>
-                    <Select 
-                      onValueChange={field.onChange} 
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger className="bg-gray-700 text-white border-gray-600 focus:ring-[#A259FF]">
-                          <SelectValue placeholder="Select" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent className="bg-gray-700 text-white border-gray-600">
-                        <SelectItem value="MALE">Male</SelectItem>
-                        <SelectItem value="FEMALE">Female</SelectItem>
-                        <SelectItem value="OTHER">Other</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage className="text-red-400" />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="user_mobile"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-gray-300">Phone Number</FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="123-456-7890" 
-                        {...field} 
-                        className="bg-gray-700 text-white border-gray-600 focus-visible:ring-[#A259FF]"
-                      />
-                    </FormControl>
-                    <FormMessage className="text-red-400" />
-                  </FormItem>
-                )}
+    <div className="flex items-center justify-center min-h-screen bg-gray-900 p-4">
+      <Card className="w-full max-w-md bg-gray-800 border-gray-700 text-white">
+        <CardHeader className="space-y-1 items-center text-center">
+          <div className="w-16 h-16 mb-4">
+            <img src="/icons/logo-white.png" alt="SalesAdvisor Logo" className="w-full h-full object-contain" />
+          </div>
+          <CardTitle className="text-2xl">Create an account</CardTitle>
+          <CardDescription className="text-gray-400">Enter your information to create your account</CardDescription>
+        </CardHeader>
+        <form onSubmit={handleSubmit}>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <label htmlFor="name" className="block text-sm font-medium text-gray-200">Name</label>
+              <Input
+                id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                className="bg-gray-700 border-gray-600 text-white placeholder-gray-400"
               />
             </div>
-            
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-gray-300">Password</FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="password" 
-                      {...field} 
-                      className="bg-gray-700 text-white border-gray-600 focus-visible:ring-[#A259FF]"
-                    />
-                  </FormControl>
-                  <FormMessage className="text-red-400" />
-                </FormItem>
-              )}
-            />
-            
+            <div className="space-y-2">
+              <label htmlFor="email" className="block text-sm font-medium text-gray-200">Email</label>
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="m@example.com"
+                required
+                className="bg-gray-700 border-gray-600 text-white placeholder-gray-400"
+              />
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="password" className="block text-sm font-medium text-gray-200">Password</label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="bg-gray-700 border-gray-600 text-white placeholder-gray-400"
+              />
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="mobile" className="block text-sm font-medium text-gray-200">Mobile</label>
+              <Input
+                id="mobile"
+                value={mobile}
+                onChange={(e) => setMobile(e.target.value)}
+                required
+                className="bg-gray-700 border-gray-600 text-white placeholder-gray-400"
+              />
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="gender" className="block text-sm font-medium text-gray-200">Gender</label>
+              <Select value={gender} onValueChange={(value) => setGender(value as 'MALE' | 'FEMALE' | 'OTHER')}>
+                <SelectTrigger className="bg-gray-700 border-gray-600 text-white">
+                  <SelectValue placeholder="Select gender" />
+                </SelectTrigger>
+                <SelectContent className="bg-gray-700 border-gray-600 text-white">
+                  <SelectItem value="MALE">Male</SelectItem>
+                  <SelectItem value="FEMALE">Female</SelectItem>
+                  <SelectItem value="OTHER">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+          <CardFooter className="flex flex-col space-y-4">
             <Button 
               type="submit" 
-              className="w-full bg-[#A259FF] hover:bg-[#A259FF]/90" 
-              disabled={isLoading}
+              className="w-full bg-[#A259FF] hover:bg-[#9144e8]" 
+              disabled={isSubmitting}
             >
-              {isLoading ? "Creating account..." : "Create account"}
+              {isSubmitting ? 'Creating account...' : 'Sign up'}
             </Button>
-          </form>
-        </Form>
-        
-        <div className="text-center mt-4">
-          <p className="text-sm text-gray-400">
-            Already have an account?{" "}
-            <Link to="/signin" className="text-[#A259FF] hover:underline">
-              Sign in
-            </Link>
-          </p>
-        </div>
-      </div>
+            <div className="text-center text-sm text-gray-400">
+              Already have an account?{" "}
+              <Link to="/signin" className="text-[#A259FF] hover:underline">
+                Sign in
+              </Link>
+            </div>
+          </CardFooter>
+        </form>
+      </Card>
     </div>
   );
 };

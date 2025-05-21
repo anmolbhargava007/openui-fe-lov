@@ -1,34 +1,24 @@
 
+import React, { ReactNode } from "react";
+import { Navigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
-import { Navigate, Outlet } from "react-router-dom";
+
 interface AuthLayoutProps {
-  protected?: boolean;
-  withHeader?: boolean;
+  children: ReactNode;
 }
 
-export const AuthLayout = ({ protected: isProtected = false, withHeader = false }: AuthLayoutProps) => {
-  const { isAuthenticated, loading, userRole } = useAuth();
+const AuthLayout = ({ children }: AuthLayoutProps) => {
+  const { isAuthenticated, loading } = useAuth();
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-pulse">Loading...</div>
-      </div>
-    );
+    return <div>Loading...</div>;
   }
 
-  if (isProtected && !isAuthenticated) {
-    return <Navigate to="/signin" />;
+  if (isAuthenticated) {
+    return <Navigate to="/dashboard" />;
   }
 
-  if (!isProtected && isAuthenticated) {
-    // Redirect based on user role
-    return <Navigate to={userRole === 1 ? "/dashboard" : "/workspace"} />;
-  }
-
-  return (
-    <>
-      <Outlet />
-    </>
-  );
+  return <>{children}</>;
 };
+
+export default AuthLayout;

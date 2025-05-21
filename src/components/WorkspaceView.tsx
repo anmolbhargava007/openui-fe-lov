@@ -1,14 +1,23 @@
-import React, { useState } from "react";
+
+import React, { useState, useEffect } from "react";
 import { useWorkspace } from "@/context/WorkspaceContext";
-import { FileText } from "lucide-react";
+import { FileText, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ChatView from "./ChatView";
 import UploadModal from "./UploadModal";
-import UserMenu from "./UserMenu";
+import WorkspaceDialog from "./WorkspaceDialog";
 
 const WorkspaceView = () => {
-  const { selectedWorkspace } = useWorkspace();
+  const { workspaces, selectedWorkspace, selectWorkspace, loading } = useWorkspace();
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [isWorkspaceDialogOpen, setIsWorkspaceDialogOpen] = useState(false);
+
+  // Auto-select first workspace on initial load if workspaces exist
+  useEffect(() => {
+    if (!loading && workspaces.length > 0 && !selectedWorkspace) {
+      selectWorkspace(workspaces[0]);
+    }
+  }, [workspaces, selectedWorkspace, loading, selectWorkspace]);
 
   if (!selectedWorkspace) {
     return (
@@ -18,18 +27,39 @@ const WorkspaceView = () => {
           <h2 className="text-2xl font-semibold text-white mb-2">
             Welcome to SalesAdvisor
           </h2>
-          <p className="text-gray-300 mb-6">
-            Select a workspace or create a new one to get started with your
-            documents.
-          </p>
+          {workspaces.length === 0 ? (
+            <>
+              <p className="text-gray-300 mb-6">
+                Create a workspace to get started with your documents.
+              </p>
+              <Button 
+                onClick={() => setIsWorkspaceDialogOpen(true)}
+                className="bg-[#A259FF] hover:bg-[#A259FF]/90 text-white"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Add Workspace
+              </Button>
+            </>
+          ) : (
+            <p className="text-gray-300 mb-6">
+              Select a workspace or create a new one to get started with your documents.
+            </p>
+          )}
         </div>
+
+        {/* Workspace Creation Dialog */}
+        <WorkspaceDialog
+          isOpen={isWorkspaceDialogOpen}
+          onClose={() => setIsWorkspaceDialogOpen(false)}
+          workspace={null}
+          mode="create"
+        />
       </div>
     );
   }
 
   return (
     <div className="flex flex-col h-full">
-
       <div className="flex-grow overflow-hidden">
         {selectedWorkspace.ws_id && (
           <ChatView
