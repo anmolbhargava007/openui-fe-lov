@@ -6,7 +6,9 @@ import { useParams } from 'react-router-dom'
 import {
 	historyAtomFamily,
 	historyIdsAtom,
-	historySidebarStateAtom
+	historySidebarStateAtom,
+	backendHistoryAtom,
+	loadHistoryFromBackend
 } from 'state'
 import HistoryItem from './HistoryItem'
 
@@ -17,15 +19,19 @@ export default function History() {
 	const isOpen = useAtomValue(historySidebarStateAtom) !== 'closed'
 
 	const [isCollapsed, setIsCollapsed] = useState(!isOpen)
-	const [history] = useAtom(historyIdsAtom)
+	const backendHistory = useAtomValue(backendHistoryAtom)
+	const [, loadHistory] = useAtom(loadHistoryFromBackend)
 	const store = useStore()
 
 	const now = new Date()
-
 	const today = new Date(now.getTime() - 24 * 60 * 60 * 1000)
-
 	const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
 	let lastLabel = 'Today'
+
+	useEffect(() => {
+		// Load history from backend on component mount
+		loadHistory()
+	}, [loadHistory])
 
 	useEffect(() => {
 		// SetIsCollapsed(!bigEnough)
@@ -34,10 +40,12 @@ export default function History() {
 	return (
 		<div className='relative flex h-screen max-h-[calc(100vh-4em)] flex-none flex-col overflow-y-auto border-r border-input transition-all duration-500 ease-in-out dark:bg-zinc-900'>
 			<div className='flex h-screen max-h-full flex-col items-start justify-start overflow-x-hidden py-2 pl-2'>
-				{history.map((id, i) => {
+				{backendHistory.history.map((id, i) => {
 					let label: string | undefined
-					const item = store.get(historyAtomFamily({ id }))
-					// Hacky reset of lastLabel for cases where we have new itesm
+					const item = backendHistory.historyMap[id]
+					if (!item) return null
+					
+					// Hacky reset of lastLabel for cases where we have new items
 					if (i === 0 && item.createdAt && item.createdAt >= today) {
 						lastLabel = ''
 					}

@@ -2,6 +2,7 @@ import { atom, useAtom } from 'jotai'
 import { atomFamily } from 'jotai/utils'
 import { parseHTML, type HTMLAndJS } from 'lib/html'
 import { parseMarkdown } from 'lib/markdown'
+import { saveHistoryToBackend, fetchHistoryFromBackend, type HistoryApiRequest } from '../api/history'
 
 export type Framework =
 	| 'angular'
@@ -469,15 +470,65 @@ export const serializeHistoryAtom = atom(
 	}
 )
 
+// Backend history atoms
+export const backendHistoryAtom = atom<{
+	history: string[]
+	historyMap: Record<string, HistoryItem>
+}>({ history: [], historyMap: {} })
+
+// Load history from backend
+export const loadHistoryFromBackend = atom(
+	null,
+	async (get, set) => {
+		try {
+			const data = await fetchHistoryFromBackend(1)
+			const processedHistoryMap: Record<string, HistoryItem> = {}
+			
+			// Process the backend data to match our HistoryItem interface
+			for (const [id, item] of Object.entries(data.historyMap)) {
+				if (item) {
+					processedHistoryMap[id] = {
+						prompt: item.prompt || item.Prompt || '',
+						createdAt: item.createdAt ? new Date(item.createdAt) : new Date(),
+						name: item.name || 'Untitled',
+						emoji: item.emoji || '🤔',
+						html: item.html || '',
+						markdown: item.markdown || '',
+						components: item.components || {},
+						prompts: item.prompts || [],
+						comments: item.comments || []
+					}
+				}
+			}
+			
+			set(backendHistoryAtom, {
+				history: data.history || [],
+				historyMap: processedHistoryMap
+			})
+		} catch (error) {
+			console.error('Failed to load history from backend:', error)
+			// Fallback to localStorage if backend fails
+			const localData = get(backendHistoryAtom)
+			if (localData.history.length === 0) {
+				set(backendHistoryAtom, {
+					history: savedHist.history,
+					historyMap: savedHist.historyMap as Record<string, HistoryItem>
+				})
+			}
+		}
+	}
+)
+
 export const useSaveHistory = () => {
 	const [, dispatch] = useAtom(serializeHistoryAtom)
 	return () => {
 		dispatch({
 			type: 'serialize',
-			callback: value => {
+			callback: async (value) => {
 				let safeValue = value
 				const parsed = JSON.parse(value) as SavedHistory
-				// TODO: get rid of this lameness
+				
+				// Save to localStorage (existing functionality)
 				if (value.length > 4_000_000) {
 					console.warn('History too large, removing largest payload')
 					let largestKey = ''
@@ -495,7 +546,7 @@ export const useSaveHistory = () => {
 					}
 					safeValue = JSON.stringify(parsed)
 				}
-				// TODO: move this shit to indexed DB!!!
+				
 				for (const key of Object.keys(parsed.historyMap)) {
 					const item = parsed.historyMap[key] as HistoryItem
 					const html = item.html ?? ''
@@ -517,11 +568,42 @@ export const useSaveHistory = () => {
 						}
 					}
 				}
-				console.log('Saving history', safeValue)
+				
+				console.log('Saving history to localStorage', safeValue)
 				try {
 					localStorage.setItem('serializedHistory', safeValue)
 				} catch (error) {
-					console.error('Error saving history', error)
+					console.error('Error saving history to localStorage', error)
+				}
+
+				// Also save to backend
+				try {
+					for (const [historyId, historyItem] of Object.entries(parsed.historyMap)) {
+						if (historyItem) {
+							const historyData: HistoryApiRequest = {
+								history_name: historyId,
+								user_id: 1,
+								session_id: historyId,
+								history_date: new Date().toISOString().split('T')[0],
+								history_map: [{
+									Prompt: historyItem.prompt,
+									name: historyItem.name,
+									emoji: historyItem.emoji,
+									html: historyItem.html,
+									markdown: historyItem.markdown,
+									components: historyItem.components,
+									prompts: historyItem.prompts,
+									createdAt: historyItem.createdAt?.toISOString()
+								}],
+								is_active: true
+							}
+							
+							await saveHistoryToBackend(historyData)
+						}
+					}
+					console.log('Successfully saved history to backend')
+				} catch (error) {
+					console.error('Error saving history to backend:', error)
 				}
 			}
 		})

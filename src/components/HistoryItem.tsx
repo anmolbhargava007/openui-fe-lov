@@ -12,7 +12,8 @@ import { Link, useNavigate } from 'react-router-dom'
 import {
 	historyAtomFamily,
 	historyIdsAtom,
-	historySidebarStateAtom
+	historySidebarStateAtom,
+	backendHistoryAtom
 } from 'state'
 
 export default function HistoryItem({
@@ -26,7 +27,8 @@ export default function HistoryItem({
 	isActive: boolean
 	isCollapsed: boolean
 }) {
-	const item = useAtomValue(historyAtomFamily({ id }))
+	const backendHistory = useAtomValue(backendHistoryAtom)
+	const item = backendHistory.historyMap[id] || { prompt: '', name: 'Unknown', emoji: '🤔' }
 	const navigate = useNavigate()
 	const setHistoryIds = useSetAtom(historyIdsAtom)
 	const setSidebarState = useSetAtom(historySidebarStateAtom)
