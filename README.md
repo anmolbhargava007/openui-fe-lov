@@ -1,21 +1,20 @@
-<!-- first step 
-(While creating a new image dont forget to change this name anmolbhargava07/sbi-ui to anmolbhargava07/new-name) --> 
-docker build -t anmolbhargava07/sbi-ui:latest .
+# OpenUI Frontend
 
-<!-- second step -->
-docker push anmolbhargava07/sbi-ui:latest
+This is the frontend for OpenUI. It's built using [vite](https://vitejs.dev), [React](https://reactjs.org), and [Tailwind CSS](https://tailwindcss.com) as a SPA.
 
-<!-- Third step -->
-docker buildx ls
- 
-<!-- Fourth step -->
- docker buildx build --platform linux/amd64,linux/arm64 -t anmolbhargava07/sbi-ui:latest --push .
+## Development
 
- <!-- If error comes (for ex : multi-platform issue, then run other command) -->
- docker buildx create --use
+```bash
+pnpm install
+pnpm run dev
+```
 
- <!-- Then again run  -->
-docker buildx build --platform linux/amd64,linux/arm64 -t anmolbhargava07/sbi-ui:latest --push .
+In a separate terminal navigate to the backend directory and run:
 
-<!-- run the docker app in local-->
-docker run -p 9090:80 anmolbhargava07/sbi-ui:latest 
+```bash
+cd openui/backend
+pip install -e .
+python -m openui --dev
+```
+
+All changes should now be live reloaded, god speed.

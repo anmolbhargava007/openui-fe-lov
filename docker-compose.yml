@@ -1,6 +1,0 @@
-services:
-  frontend:
-    build: .
-    ports:
-      - "9090:80"
-    container_name: sbi-ui
