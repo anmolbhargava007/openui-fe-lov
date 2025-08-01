@@ -4,10 +4,8 @@ import { MOBILE_WIDTH } from 'lib/utils'
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import {
-	historyAtomFamily,
-	historyIdsAtom,
-	historySidebarStateAtom,
 	backendHistoryAtom,
+	historySidebarStateAtom,
 	loadHistoryFromBackend
 } from 'state'
 import HistoryItem from './HistoryItem'
@@ -40,8 +38,8 @@ export default function History() {
 	return (
 		<div className='relative flex h-screen max-h-[calc(100vh-4em)] flex-none flex-col overflow-y-auto border-r border-input transition-all duration-500 ease-in-out dark:bg-zinc-900'>
 			<div className='flex h-screen max-h-full flex-col items-start justify-start overflow-x-hidden py-2 pl-2'>
-				{backendHistory.history.map((id, i) => {
-					let label: string | undefined
+			{[...new Set(backendHistory.history)].map((id, i) => {
+				let label: string | undefined
 					const item = backendHistory.historyMap[id]
 					if (!item) return null
 					

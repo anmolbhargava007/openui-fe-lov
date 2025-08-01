@@ -1,8 +1,8 @@
+import { fetchHistoryFromBackend, saveHistoryToBackend, type HistoryApiRequest } from 'api/history'
 import { atom, useAtom } from 'jotai'
 import { atomFamily } from 'jotai/utils'
 import { parseHTML, type HTMLAndJS } from 'lib/html'
 import { parseMarkdown } from 'lib/markdown'
-import { saveHistoryToBackend, fetchHistoryFromBackend, type HistoryApiRequest } from '../api/history'
 
 export type Framework =
 	| 'angular'
@@ -221,7 +221,7 @@ export class ItemWrapper {
 		}
 		const { html } = parseMarkdown(
 			this.chapters[idx]?.markdown ??
-				'<h1 class="text-red-800">Unknown Error, unable to parse LLM Response</h1>',
+			'<h1 class="text-red-800">Unknown Error, unable to parse LLM Response</h1>',
 			this.version(idx),
 			rendering
 		)
@@ -241,7 +241,7 @@ export class ItemWrapper {
 		}
 		let html: string | undefined
 		if (this.pureHTMLMemo[idx] === undefined) {
-			;({ html } = parseMarkdown(
+			; ({ html } = parseMarkdown(
 				this.chapters[idx]?.markdown ?? '',
 				this.version(idx),
 				rendering
@@ -483,7 +483,7 @@ export const loadHistoryFromBackend = atom(
 		try {
 			const data = await fetchHistoryFromBackend(1)
 			const processedHistoryMap: Record<string, HistoryItem> = {}
-			
+
 			// Process the backend data to match our HistoryItem interface
 			for (const [id, item] of Object.entries(data.historyMap)) {
 				if (item) {
@@ -500,7 +500,6 @@ export const loadHistoryFromBackend = atom(
 					}
 				}
 			}
-			
 			set(backendHistoryAtom, {
 				history: data.history || [],
 				historyMap: processedHistoryMap
@@ -527,7 +526,6 @@ export const useSaveHistory = () => {
 			callback: async (value) => {
 				let safeValue = value
 				const parsed = JSON.parse(value) as SavedHistory
-				
 				// Save to localStorage (existing functionality)
 				if (value.length > 4_000_000) {
 					console.warn('History too large, removing largest payload')
@@ -546,7 +544,6 @@ export const useSaveHistory = () => {
 					}
 					safeValue = JSON.stringify(parsed)
 				}
-				
 				for (const key of Object.keys(parsed.historyMap)) {
 					const item = parsed.historyMap[key] as HistoryItem
 					const html = item.html ?? ''
@@ -568,7 +565,6 @@ export const useSaveHistory = () => {
 						}
 					}
 				}
-				
 				console.log('Saving history to localStorage', safeValue)
 				try {
 					localStorage.setItem('serializedHistory', safeValue)
@@ -593,11 +589,12 @@ export const useSaveHistory = () => {
 									markdown: historyItem.markdown,
 									components: historyItem.components,
 									prompts: historyItem.prompts,
-									createdAt: historyItem.createdAt?.toISOString()
+									createdAt: historyItem.createdAt
+										? new Date(historyItem.createdAt).toISOString()
+										: new Date().toISOString()
 								}],
 								is_active: true
 							}
-							
 							await saveHistoryToBackend(historyData)
 						}
 					}
