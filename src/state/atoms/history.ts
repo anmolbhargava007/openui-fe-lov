@@ -544,35 +544,8 @@ export const useSaveHistory = () => {
 					}
 					safeValue = JSON.stringify(parsed)
 				}
-				for (const key of Object.keys(parsed.historyMap)) {
-					const item = parsed.historyMap[key] as HistoryItem
-					const html = item.html ?? ''
-					if (html !== '') {
-						delete item.html
-						try {
-							localStorage.setItem(`${key}.html`, html)
-						} catch (error) {
-							console.error('Error saving HTML', error)
-						}
-					}
-					const markdown = item.markdown ?? ''
-					if (markdown !== '') {
-						delete item.markdown
-						try {
-							localStorage.setItem(`${key}.md`, markdown)
-						} catch (error) {
-							console.error('Error saving markdown', error)
-						}
-					}
-				}
-				console.log('Saving history to localStorage', safeValue)
-				try {
-					localStorage.setItem('serializedHistory', safeValue)
-				} catch (error) {
-					console.error('Error saving history to localStorage', error)
-				}
 
-				// Also save to backend
+				// First, save to backend with full data
 				try {
 					for (const [historyId, historyItem] of Object.entries(parsed.historyMap)) {
 						if (historyItem) {
@@ -601,6 +574,35 @@ export const useSaveHistory = () => {
 					console.log('Successfully saved history to backend')
 				} catch (error) {
 					console.error('Error saving history to backend:', error)
+				}
+
+				// Then save to localStorage (removing large data to save space)
+				for (const key of Object.keys(parsed.historyMap)) {
+					const item = parsed.historyMap[key] as HistoryItem
+					const html = item.html ?? ''
+					if (html !== '') {
+						delete item.html
+						try {
+							localStorage.setItem(`${key}.html`, html)
+						} catch (error) {
+							console.error('Error saving HTML', error)
+						}
+					}
+					const markdown = item.markdown ?? ''
+					if (markdown !== '') {
+						delete item.markdown
+						try {
+							localStorage.setItem(`${key}.md`, markdown)
+						} catch (error) {
+							console.error('Error saving markdown', error)
+						}
+					}
+				}
+				console.log('Saving history to localStorage', safeValue)
+				try {
+					localStorage.setItem('serializedHistory', safeValue)
+				} catch (error) {
+					console.error('Error saving history to localStorage', error)
 				}
 			}
 		})

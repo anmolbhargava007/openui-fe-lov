@@ -48,6 +48,7 @@ export default defineConfig(({ mode }) => ({
 		}
 	},
 	server: {
+		port: 8080,
 		proxy: {
 			'/v1': 'http://localhost:7878',
 			// TODO: Currently having this proxy to /annotator, kinda lame
