@@ -14,7 +14,7 @@ import {
 	historyIdsAtom,
 	historySidebarStateAtom,
 	backendHistoryAtom,
-	loadBackendHistoryAtom
+	loadHistoryFromBackend
 } from 'state'
 import { deleteHistoryFromBackend } from '../api/history'
 
@@ -34,7 +34,7 @@ export default function HistoryItem({
 	const navigate = useNavigate()
 	const setHistoryIds = useSetAtom(historyIdsAtom)
 	const setSidebarState = useSetAtom(historySidebarStateAtom)
-	const loadBackendHistory = useSetAtom(loadBackendHistoryAtom)
+	const loadBackendHistory = useSetAtom(loadHistoryFromBackend)
 	// Border-[1px] border-b-zinc-500
 	return (
 		<>
