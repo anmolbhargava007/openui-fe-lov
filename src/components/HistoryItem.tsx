@@ -13,8 +13,10 @@ import {
 	historyAtomFamily,
 	historyIdsAtom,
 	historySidebarStateAtom,
-	backendHistoryAtom
+	backendHistoryAtom,
+	loadBackendHistoryAtom
 } from 'state'
+import { deleteHistoryFromBackend } from '../api/history'
 
 export default function HistoryItem({
 	id,
@@ -32,6 +34,7 @@ export default function HistoryItem({
 	const navigate = useNavigate()
 	const setHistoryIds = useSetAtom(historyIdsAtom)
 	const setSidebarState = useSetAtom(historySidebarStateAtom)
+	const loadBackendHistory = useSetAtom(loadBackendHistoryAtom)
 	// Border-[1px] border-b-zinc-500
 	return (
 		<>
@@ -79,12 +82,24 @@ export default function HistoryItem({
 						<DropdownMenuContent>
 							<DropdownMenuItem>Copy</DropdownMenuItem>
 							<DropdownMenuItem
-								onClick={() => {
-									setHistoryIds(prev => prev.filter(prevId => prevId !== id))
-									historyAtomFamily.remove({ id })
-									localStorage.removeItem(`${id}.html`)
-									localStorage.removeItem(`${id}.md`)
-									navigate('/ai/new')
+								onClick={async () => {
+									try {
+										// Delete from backend
+										await deleteHistoryFromBackend(id)
+										
+										// Remove from local state and storage
+										setHistoryIds(prev => prev.filter(prevId => prevId !== id))
+										historyAtomFamily.remove({ id })
+										localStorage.removeItem(`${id}.html`)
+										localStorage.removeItem(`${id}.md`)
+										
+										// Refresh backend history
+										loadBackendHistory()
+										
+										navigate('/ai/new')
+									} catch (error) {
+										console.error('Failed to delete history:', error)
+									}
 								}}
 							>
 								Delete

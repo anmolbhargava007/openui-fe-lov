@@ -63,3 +63,26 @@ export const fetchHistoryFromBackend = async (userId: number = 1): Promise<Histo
     throw error
   }
 }
+
+// Delete history from backend
+export const deleteHistoryFromBackend = async (sessionId: string): Promise<void> => {
+  try {
+    const response = await fetch(`${NODE_API_HOST}/api/v1/history-ui`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        session_id: sessionId,
+        is_active: true
+      })
+    })
+    
+    if (!response.ok) {
+      throw new Error(`Failed to delete history: ${response.statusText}`)
+    }
+  } catch (error) {
+    console.error('Error deleting history from backend:', error)
+    throw error
+  }
+}
