@@ -335,31 +335,11 @@ export class ItemWrapper {
 	}
 }
 
-let savedHistValue
-if (typeof localStorage !== 'undefined') {
-	savedHistValue = localStorage.getItem('serializedHistory')
-}
 interface SavedHistory {
 	history: string[]
 	historyMap: Record<string, HistoryItem | undefined>
 }
 type Callback = (value: HistoryItem) => HistoryItem
-const savedHist: SavedHistory = savedHistValue
-	? (JSON.parse(savedHistValue) as SavedHistory)
-	: { history: [], historyMap: {} }
-// Cast createdAt load markdown and html
-for (const k of Object.keys(savedHist.historyMap)) {
-	const item = savedHist.historyMap[k] as HistoryItem
-	if (item.createdAt) {
-		item.createdAt = new Date(item.createdAt)
-	}
-	if (!item.html) {
-		item.html = localStorage.getItem(`${k}.html`) ?? undefined
-	}
-	if (!item.markdown) {
-		item.markdown = localStorage.getItem(`${k}.md`) ?? undefined
-	}
-}
 
 interface Param {
 	prompt?: string
@@ -367,14 +347,15 @@ interface Param {
 	createdAt?: Date
 	markdown?: string
 }
-export const historyIdsAtom = atom<string[]>(savedHist.history)
+export const historyIdsAtom = atom<string[]>([])
 export const historyAtomFamily = atomFamily(
 	(param: Param) => {
-		const hist: HistoryItem = savedHist.historyMap[param.id] ?? { prompt: '' }
+		const hist: HistoryItem = { prompt: '' }
 		const histAtom = atom<HistoryItem>({
 			...hist,
 			prompt: param.prompt ?? hist.prompt,
-			createdAt: param.createdAt ?? hist.createdAt
+			createdAt: param.createdAt ?? hist.createdAt,
+			markdown: param.markdown ?? hist.markdown
 		})
 		return atom(
 			get => get(histAtom),
@@ -506,14 +487,11 @@ export const loadHistoryFromBackend = atom(
 			})
 		} catch (error) {
 			console.error('Failed to load history from backend:', error)
-			// Fallback to localStorage if backend fails
-			const localData = get(backendHistoryAtom)
-			if (localData.history.length === 0) {
-				set(backendHistoryAtom, {
-					history: savedHist.history,
-					historyMap: savedHist.historyMap as Record<string, HistoryItem>
-				})
-			}
+			// Set empty state if backend fails
+			set(backendHistoryAtom, {
+				history: [],
+				historyMap: {}
+			})
 		}
 	}
 )
@@ -524,28 +502,9 @@ export const useSaveHistory = () => {
 		dispatch({
 			type: 'serialize',
 			callback: async (value) => {
-				let safeValue = value
 				const parsed = JSON.parse(value) as SavedHistory
-				// Save to localStorage (existing functionality)
-				if (value.length > 4_000_000) {
-					console.warn('History too large, removing largest payload')
-					let largestKey = ''
-					let largestLen = 0
-					for (const key of Object.keys(parsed.historyMap)) {
-						const html = parsed.historyMap[key]?.html ?? ''
-						if (html.length > largestLen) {
-							largestLen = html.length
-							largestKey = key
-						}
-					}
-					if (parsed.historyMap[largestKey]) {
-						delete parsed.historyMap[largestKey]
-						parsed.history = parsed.history.filter(h => h !== largestKey)
-					}
-					safeValue = JSON.stringify(parsed)
-				}
-
-				// First, save to backend with full data
+				
+				// Save to backend only - no localStorage
 				try {
 					for (const [historyId, historyItem] of Object.entries(parsed.historyMap)) {
 						if (historyItem) {
@@ -574,35 +533,6 @@ export const useSaveHistory = () => {
 					console.log('Successfully saved history to backend')
 				} catch (error) {
 					console.error('Error saving history to backend:', error)
-				}
-
-				// Then save to localStorage (removing large data to save space)
-				for (const key of Object.keys(parsed.historyMap)) {
-					const item = parsed.historyMap[key] as HistoryItem
-					const html = item.html ?? ''
-					if (html !== '') {
-						delete item.html
-						try {
-							localStorage.setItem(`${key}.html`, html)
-						} catch (error) {
-							console.error('Error saving HTML', error)
-						}
-					}
-					const markdown = item.markdown ?? ''
-					if (markdown !== '') {
-						delete item.markdown
-						try {
-							localStorage.setItem(`${key}.md`, markdown)
-						} catch (error) {
-							console.error('Error saving markdown', error)
-						}
-					}
-				}
-				console.log('Saving history to localStorage', safeValue)
-				try {
-					localStorage.setItem('serializedHistory', safeValue)
-				} catch (error) {
-					console.error('Error saving history to localStorage', error)
 				}
 			}
 		})

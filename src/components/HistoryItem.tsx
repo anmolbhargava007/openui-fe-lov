@@ -87,11 +87,9 @@ export default function HistoryItem({
 										// Delete from backend
 										await deleteHistoryFromBackend(id)
 										
-										// Remove from local state and storage
+										// Remove from local state
 										setHistoryIds(prev => prev.filter(prevId => prevId !== id))
 										historyAtomFamily.remove({ id })
-										localStorage.removeItem(`${id}.html`)
-										localStorage.removeItem(`${id}.md`)
 										
 										// Refresh backend history
 										loadBackendHistory()
