@@ -462,14 +462,16 @@ export const loadHistoryFromBackend = atom(
 	null,
 	async (get, set) => {
 		try {
-			const data = await fetchHistoryFromBackend(1)
+			const response = await fetchHistoryFromBackend(1)
+			console.log('Backend response:', response)
+			
 			const processedHistoryMap: Record<string, HistoryItem> = {}
 
 			// Process the backend data to match our HistoryItem interface
-			for (const [id, item] of Object.entries(data.historyMap)) {
+			for (const [id, item] of Object.entries(response.historyMap || {})) {
 				if (item) {
 					processedHistoryMap[id] = {
-						prompt: item.prompt || item.Prompt || '',
+						prompt: item.Prompt || item.prompt || '',
 						createdAt: item.createdAt ? new Date(item.createdAt) : new Date(),
 						name: item.name || 'Untitled',
 						emoji: item.emoji || '🤔',
@@ -481,9 +483,15 @@ export const loadHistoryFromBackend = atom(
 					}
 				}
 			}
+			
 			set(backendHistoryAtom, {
-				history: data.history || [],
+				history: response.history || [],
 				historyMap: processedHistoryMap
+			})
+			
+			console.log('Processed history:', { 
+				history: response.history || [], 
+				historyMap: processedHistoryMap 
 			})
 		} catch (error) {
 			console.error('Failed to load history from backend:', error)
