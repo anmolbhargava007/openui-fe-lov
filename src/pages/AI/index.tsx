@@ -6,11 +6,11 @@ import LoadingOrError from 'components/LoadingOrError'
 import NavBar from 'components/NavBar'
 import Register from 'components/Register'
 import Versions from 'components/Versions'
-import { useAtomValue } from 'jotai'
+import { useAtom, useAtomValue } from 'jotai'
 import { cn } from 'lib/utils'
 import { useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { historyAtomFamily, historySidebarStateAtom } from 'state'
+import { historyAtomFamily, historySidebarStateAtom, loadHistoryFromBackend } from 'state'
 
 export default function LayoutWithSidebar({
 	isShared = false
@@ -21,12 +21,20 @@ export default function LayoutWithSidebar({
 	const params = useParams()
 	const curItem = useAtomValue(historyAtomFamily({ id: params.id ?? 'new' }))
 	const sidebarState = useAtomValue(historySidebarStateAtom)
+	const [, loadHistory] = useAtom(loadHistoryFromBackend)
 
 	useEffect(() => {
 		if (params.id === undefined) {
 			navigation(`/ai/new`)
 		}
 	}, [params.id, navigation])
+
+	// Load history when accessing a specific item that might not be loaded yet
+	useEffect(() => {
+		if (params.id && params.id !== 'new' && (!curItem.name || !curItem.markdown)) {
+			loadHistory()
+		}
+	}, [params.id, curItem.name, curItem.markdown, loadHistory])
 
 	return (
 		<div className='mobile-safe-container flex h-screen w-full flex-col'>

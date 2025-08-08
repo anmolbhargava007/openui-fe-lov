@@ -30,6 +30,13 @@ export default function History() {
 		// Load history from backend on component mount
 		loadHistory()
 	}, [loadHistory])
+	
+	// Also ensure history is loaded when navigating to a specific item
+	useEffect(() => {
+		if (params.id && params.id !== 'new' && !backendHistory.historyMap[params.id]) {
+			loadHistory()
+		}
+	}, [params.id, backendHistory.historyMap, loadHistory])
 
 	useEffect(() => {
 		// SetIsCollapsed(!bigEnough)

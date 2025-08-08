@@ -9,6 +9,7 @@ import {
 	ItemWrapper,
 	cleanUiState,
 	historyAtomFamily,
+	loadHistoryFromBackend,
 	uiStateAtom
 } from 'state'
 
@@ -21,11 +22,19 @@ export const CurrentUIProvider = ({
 }) => {
 	const { id } = useParams()
 	const [rawItem, setRawItem] = useAtom(historyAtomFamily({ id: id ?? 'new' }))
+	const [, loadHistory] = useAtom(loadHistoryFromBackend)
 	const item = useMemo(
 		() => new ItemWrapper(rawItem, setRawItem),
 		[rawItem, setRawItem]
 	)
 	const [versionIdx] = useVersion(item)
+
+	// Ensure history is loaded when accessing a specific item
+	useEffect(() => {
+		if (id && id !== 'new' && (!rawItem.name || !rawItem.markdown)) {
+			loadHistory()
+		}
+	}, [id, rawItem.name, rawItem.markdown, loadHistory])
 
 	const [uiState, setUiState] = useAtom(uiStateAtom)
 	const htmlToParse = useThrottle(

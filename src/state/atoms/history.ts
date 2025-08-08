@@ -484,10 +484,29 @@ export const loadHistoryFromBackend = atom(
 				}
 			}
 			
+			// Set backend history atom
 			set(backendHistoryAtom, {
 				history: response.history || [],
 				historyMap: processedHistoryMap
 			})
+			
+			// CRITICAL: Also populate the historyAtomFamily with backend data
+			// This ensures the UI components can access the history items
+			const historyIds = response.history || []
+			set(historyIdsAtom, historyIds)
+			
+			// Populate each history item in the atom family
+			for (const id of historyIds) {
+				const item = processedHistoryMap[id]
+				if (item) {
+					set(historyAtomFamily({ 
+						id,
+						prompt: item.prompt,
+						createdAt: item.createdAt,
+						markdown: item.markdown
+					}), item)
+				}
+			}
 			
 			console.log('Processed history:', { 
 				history: response.history || [], 
