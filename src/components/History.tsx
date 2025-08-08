@@ -26,17 +26,13 @@ export default function History() {
 	const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
 	let lastLabel = 'Today'
 
+	// Load history from backend on component mount only
 	useEffect(() => {
-		// Load history from backend on component mount
-		loadHistory()
-	}, [loadHistory])
-	
-	// Also ensure history is loaded when navigating to a specific item
-	useEffect(() => {
-		if (params.id && params.id !== 'new' && !backendHistory.historyMap[params.id]) {
+		// Only load if we don't have any history data yet
+		if (backendHistory.history.length === 0) {
 			loadHistory()
 		}
-	}, [params.id, backendHistory.historyMap, loadHistory])
+	}, [loadHistory, backendHistory.history.length])
 
 	useEffect(() => {
 		// SetIsCollapsed(!bigEnough)

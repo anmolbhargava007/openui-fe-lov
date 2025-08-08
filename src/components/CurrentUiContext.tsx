@@ -29,12 +29,7 @@ export const CurrentUIProvider = ({
 	)
 	const [versionIdx] = useVersion(item)
 
-	// Ensure history is loaded when accessing a specific item
-	useEffect(() => {
-		if (id && id !== 'new' && (!rawItem.name || !rawItem.markdown)) {
-			loadHistory()
-		}
-	}, [id, rawItem.name, rawItem.markdown, loadHistory])
+	// Removed redundant history loading - handled centrally with loading state
 
 	const [uiState, setUiState] = useAtom(uiStateAtom)
 	const htmlToParse = useThrottle(

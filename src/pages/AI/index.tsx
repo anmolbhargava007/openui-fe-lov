@@ -29,12 +29,7 @@ export default function LayoutWithSidebar({
 		}
 	}, [params.id, navigation])
 
-	// Load history when accessing a specific item that might not be loaded yet
-	useEffect(() => {
-		if (params.id && params.id !== 'new' && (!curItem.name || !curItem.markdown)) {
-			loadHistory()
-		}
-	}, [params.id, curItem.name, curItem.markdown, loadHistory])
+	// Removed redundant history loading - handled centrally in History component
 
 	return (
 		<div className='mobile-safe-container flex h-screen w-full flex-col'>

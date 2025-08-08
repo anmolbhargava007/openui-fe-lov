@@ -457,10 +457,20 @@ export const backendHistoryAtom = atom<{
 	historyMap: Record<string, HistoryItem>
 }>({ history: [], historyMap: {} })
 
+// Add loading state to prevent redundant calls
+export const historyLoadingStateAtom = atom(false)
+
 // Load history from backend
 export const loadHistoryFromBackend = atom(
 	null,
 	async (get, set) => {
+		// Prevent multiple simultaneous calls
+		const isLoading = get(historyLoadingStateAtom)
+		if (isLoading) {
+			return
+		}
+		
+		set(historyLoadingStateAtom, true)
 		try {
 			const response = await fetchHistoryFromBackend(1)
 			console.log('Backend response:', response)
@@ -519,6 +529,8 @@ export const loadHistoryFromBackend = atom(
 				history: [],
 				historyMap: {}
 			})
+		} finally {
+			set(historyLoadingStateAtom, false)
 		}
 	}
 )
